@@ -51,7 +51,7 @@ modelCode <- nimbleCode({
 
     # probability of capture, given that an individual is in the surveyed area
     log_theta[i] <- log(
-      ilogit(beta1[method[i]] + inprod(X_p[county[i], 1:m_p], beta_p[method[i], 1:m_p]))
+      ilogit(beta1[method[i]] + inprod(X_p[i, 1:m_p], beta_p[method[i], 1:m_p]))
     ) +
       min(0, log_potential_area[i] - log_survey_area_km2[i])
 
@@ -74,7 +74,6 @@ modelCode <- nimbleCode({
   for(i in 1:n_property){
 
     log_lambda_1[i] ~ dunif(0, 10)
-    # log(N[i, all_pp[i, 1]]) <- log_lambda_1[i]
     log(N[nH[i, 1]]) <- log_lambda_1[i]
 
     # population growth across time steps
