@@ -100,7 +100,7 @@ mcmc_parallel(
   model_data = data,
   model_inits = inits,
   params_check = params_check,
-  n_iters = as.numeric(config$n_iter),
+  n_iters = 5000,
   dest = dest,
   monitors_add = monitors_add,
   custom_samplers = NULL
