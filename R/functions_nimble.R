@@ -1,4 +1,6 @@
 ## model and helper functions for nimble
+library(nimble)
+
 
 # calculate the potential area (on the log scale) for a survey given method
 calc_log_potential_area <- nimbleFunction(
@@ -28,3 +30,39 @@ calc_log_potential_area <- nimbleFunction(
   buildDerivs = TRUE
 )
 
+
+# figure out if we need to keep sampling
+continue_mcmc <- function(mcmc, effective_size, max_psrf){
+  require(coda)
+  require(purrr)
+
+  message("Checking convergence and sample size")
+  psrf <- gelman.diag(mcmc, multivariate = FALSE)$psrf
+  effective_samples <- effectiveSize(mcmc)
+
+  converged <- all(psrf[, 2] < 1.1)
+  enough_samples <- all(effective_samples >= effective_size)
+  funky <- any(is.nan(psrf)) | max(psrf) > max_psrf
+
+  message('Convergence [', converged, ']')
+  message('Enough effective samples [', enough_samples, ']')
+  message('Mixing [', !funky, ']')
+
+  done <- converged & enough_samples
+  if(done) message("MCMC complete!")
+
+  # TODO determine burnin and effective sample size POST burnin
+
+  if(funky){
+    message("\n*** Something is wrong with the mcmc! ***")
+    done <- FALSE
+  }
+
+  if(!done | funky) print(psrf)
+
+  return(list(
+    done = done,
+    psrf = psrf
+  ))
+
+}
