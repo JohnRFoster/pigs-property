@@ -14,6 +14,7 @@ config <- config::get(config = config_name)
 source("R/functions_data.R")
 source("R/functions_prep_nimble.R")
 source("R/nimble_removal_model.R")
+source("R/mcmc_parallel.R")
 
 # ===================================================
 # Data ingest ----
@@ -62,7 +63,10 @@ constants <- nimble_constants(data_final, data_litter_size, interval)
 data <- nimble_data(data_final, data_litter_size)
 
 inits <- list()
-for(i in 1:3) inits[[i]] <- nimble_inits(constants, data)
+n_chains <- Sys.getenv("SLURM_CPUS_PER_TASK")
+if(is.na(n_chains)) n_chains <- 3
+
+for(i in seq_len(n_chains)) inits[[i]] <- nimble_inits(constants, data)
 
 model_code <- modelCode
 model_constants <- constants
@@ -82,5 +86,22 @@ params_check <- c(
 
 monitors_add <- "N"
 
+# ===================================================
+# Run Nimble in parallel ----
+# ===================================================
 
+cl <- makeCluster(n_chains)
+
+mcmc_parallel(
+  cl,
+  model_code,
+  model_constants,
+  model_data,
+  model_inits,
+  params_check,
+  monitors_add = monitors_add,
+  custom_samplers = NULL
+)
+
+stopCluster(cl)
 
