@@ -8,7 +8,7 @@ library(dplyr)
 library(tidyr)
 library(readr)
 
-config_name <- "default"
+config_name <- "hpc"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -63,8 +63,10 @@ constants <- nimble_constants(data_final, data_litter_size, interval)
 data <- nimble_data(data_final, data_litter_size)
 
 inits <- list()
-n_chains <- Sys.getenv("SLURM_CPUS_PER_TASK")
+n_chains <- as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK"))
 if(is.na(n_chains)) n_chains <- 3
+
+message(n_chains, " chains")
 
 for(i in seq_len(n_chains)) inits[[i]] <- nimble_inits(constants, data)
 
