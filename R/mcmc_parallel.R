@@ -2,7 +2,7 @@
 
 
 mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_inits,
-                          params_check, monitors_add = NULL, custom_samplers = NULL){
+                          params_check, dest, monitors_add = NULL, custom_samplers = NULL){
 
   require(foreach)
   require(coda)
