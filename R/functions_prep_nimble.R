@@ -131,9 +131,8 @@ create_start_end <- function(df_take, df_pp){
 }
 
 # informed hyper parameters for beta distribution on global pig survival
-create_surv_prior <- function(interval){
+create_surv_prior <- function(interval, data_repo){
 
-  data_repo <- config::get(config = "default")$data_repo
   data <- read_csv(file.path(data_repo, "insitu/Vital_Rate_Data.csv"))
 
   data_usa <- data |>
@@ -225,7 +224,7 @@ create_X <- function(df, cols = c("c_road_den", "c_rugged", "c_canopy")){
 # Create lists for nimble ----
 # ==========================================
 
-nimble_constants <- function(df, data_ls, interval){
+nimble_constants <- function(df, data_ls, interval, data_repo){
 
   all_primary_periods <- create_all_primary_periods(df)
   n_time_prop <- n_timesteps(all_primary_periods)
@@ -238,7 +237,7 @@ nimble_constants <- function(df, data_ls, interval){
   rem <- total_take(df, all_primary_periods)
   X <- create_X(df)
   start_end <- create_start_end(df, all_primary_periods)
-  survival_prior <- create_surv_prior(interval)
+  survival_prior <- create_surv_prior(interval, data_repo)
 
   list(
     n_survey = nrow(df),

@@ -59,7 +59,7 @@ data_litter_size <- round(
 # Prepare data for NIMBLE ----
 # ===================================================
 
-constants <- nimble_constants(data_final, data_litter_size, interval)
+constants <- nimble_constants(data_final, data_litter_size, interval, data_repo)
 data <- nimble_data(data_final, data_litter_size)
 
 inits <- list()
