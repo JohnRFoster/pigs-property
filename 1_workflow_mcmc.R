@@ -7,6 +7,7 @@
 library(dplyr)
 library(tidyr)
 library(readr)
+library(parallel)
 
 config_name <- "hpc_dev"
 config <- config::get(config = config_name)
