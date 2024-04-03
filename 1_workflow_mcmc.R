@@ -92,6 +92,8 @@ monitors_add <- "N"
 
 cl <- makeCluster(n_chains)
 
+dest <- "/lustrefs/ceah/feral-swine/dev/mcmc"
+
 mcmc_parallel(
   cl,
   model_code,
@@ -99,7 +101,8 @@ mcmc_parallel(
   model_data,
   model_inits,
   params_check,
-  monitors_add = monitors_add,
+  dest,
+  monitors_add,
   custom_samplers = NULL
 )
 
