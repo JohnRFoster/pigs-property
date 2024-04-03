@@ -71,11 +71,6 @@ message(n_chains, " chains")
 
 for(i in seq_len(n_chains)) inits[[i]] <- nimble_inits(constants, data)
 
-model_code <- modelCode
-model_constants <- constants
-model_data <- data
-model_inits <- inits
-
 params_check <- c(
   "beta_p",
   "beta1",
@@ -98,14 +93,15 @@ cl <- makeCluster(n_chains)
 dest <- "/lustrefs/ceah/feral-swine/dev/mcmc"
 
 mcmc_parallel(
-  cl,
-  model_code,
-  model_constants,
-  model_data,
-  model_inits,
-  params_check,
-  dest,
-  monitors_add,
+  cl = cl,
+  model_code = modelCode,
+  model_constants = constants,
+  model_data = data,
+  model_inits = inits,
+  params_check = params_check,
+  n_iter = config$n_iter,
+  dest = dest,
+  monitors_add = monitors_add,
   custom_samplers = NULL
 )
 

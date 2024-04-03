@@ -2,7 +2,7 @@
 
 
 mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_inits,
-                          params_check, dest, monitors_add = NULL, custom_samplers = NULL){
+                          params_check, n_iter, dest, monitors_add = NULL, custom_samplers = NULL){
 
   require(foreach)
   require(coda)
@@ -81,7 +81,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   continue_sampling <- function(){
     require(nimble)
     require(coda)
-    Cmcmc$run(1000, reset = FALSE, resetMV = TRUE)
+    Cmcmc$run(n_iter, reset = FALSE, resetMV = TRUE)
     samples <<- as.matrix(Cmcmc$mvSamples)
     return(samples)
   }
@@ -123,6 +123,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     "model_code",
     "model_data",
     "model_constants",
+    "n_iter",
     "custom_samplers",
     "monitors_add",
     "params_check",
@@ -147,10 +148,10 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
   start2 <- Sys.time()
   out2 <- clusterEvalQ(cl, continue_sampling())
-  message("Additional ", 5000, " iterations completed in:")
+  message("Additional ", n_iter, " iterations completed in:")
   print(Sys.time() - start2)
 
-  message("\nTotal iterations ", 5000 * c, " completed in:")
+  message("\nTotal iterations ", n_iter * c, " completed in:")
   print(Sys.time() - start)
 
   # use mcmc on clusters to subset parameters, observed states, and unobserved states
@@ -184,8 +185,11 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
     start2 <- Sys.time()
     out2 <- clusterEvalQ(cl, continue_sampling())
-    message("Additional ", 5000, " iterations completed in:")
+    message("Additional ", n_iter, " iterations completed in:")
     print(Sys.time() - start2)
+
+    message("\nTotal iterations ", n_iter * c, " completed in:")
+    print(Sys.time() - start)
 
     # use mcmc on clusters to subset parameters, observed states, and unobserved states
     params <- clusterEvalQ(cl, subset_params())
@@ -202,6 +206,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     write_out(params, N_observed, N_unobserved, diagnostic, c, dest)
 
     continue <- !diagnostic$done
+    message("=================================================")
   }
 
 
