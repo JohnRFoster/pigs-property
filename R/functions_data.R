@@ -175,7 +175,7 @@ county_codes <- function(df){
 }
 
 get_fips <- function(file = "data/fips/national_county.txt"){
-  fips <- read_csv(file,
+  fips <- read_csv(file, show_col_types = FALSE,
                    col_names = c("state", "statefp", "countyfp",
                                  "countyname", "classfp"),
                    comment = '#')
@@ -199,7 +199,7 @@ subset_data_for_development <- function(df, n){
 }
 
 get_data <- function(file, interval, dev, n = 50){
-  all_take <- read_csv(file) |>
+  all_take <- read_csv(file, show_col_types = FALSE) |>
     mutate(cnty_name = if_else(grepl("ST ", cnty_name), gsub("ST ", "ST. ", cnty_name), cnty_name),
            cnty_name = if_else(grepl("KERN", cnty_name), "KERN", cnty_name))
 
@@ -263,7 +263,7 @@ center_scale <- function(x) {
 # Deal with observation covariates, a small percentage of which are missing
 get_obs_covars <- function(file){
   obs_covs <- file |>
-    read_csv() |>
+    read_csv(show_col_types = FALSE) |>
     mutate(county_code = sprintf("%05d", FIPS)) |>
     dplyr::select(-starts_with('sd'), -NAME, -FIPS)
 
