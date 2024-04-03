@@ -25,7 +25,7 @@ create_primary_periods <- function(df, interval) {
   # for each row in the merged data, insert the integer primary period timestep
   df$timestep <- NA
   message("Assign timesteps...")
-  pb <- txtProgressBar(max = nrow(df), style = 3)
+  pb <- txtProgressBar(max = nrow(df), style = 1)
   for (i in 1:nrow(df)) {
     after_start <- which(timestep_df$start_dates <= df$start.date[i]) |> max()
     before_end <- which(timestep_df$end_dates >= df$end.date[i]) |> min()
@@ -125,7 +125,7 @@ order_stochastic <- function(order.df){
   order_df <- order.df
   order_df$jittered_midpoint <- NA
   message("Stochastic ordering...")
-  pb <- txtProgressBar(max = nrow(order_df), style = 3)
+  pb <- txtProgressBar(max = nrow(order_df), style = 1)
   for (i in 1:nrow(order_df)) {
     if (order_df$method[i] %in% c('Trap', 'Snare')) {
       order_df$jittered_midpoint[i] <- order_df$midpoint[i] + runif(1, min = 0, max = .01)
