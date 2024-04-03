@@ -1,3 +1,6 @@
+
+library(nimble)
+
 modelCode <- nimbleCode({
 
   # priors
