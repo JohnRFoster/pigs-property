@@ -6,11 +6,13 @@
 create_primary_periods <- function(df, interval) {
   require(lubridate)
 
-  min_date <- min(df$start.date)
-  max_date <- max(df$end.date)
+  end_dates <- unique(sort(df$end.date))
+  min_date <- min(end_dates)
+  max_date <- max(end_dates)
 
   start_dates <- seq(min_date, max_date, by = paste(interval, "week"))
   end_dates <- c(start_dates[-1] - 1, max_date)
+
   targets::tar_assert_identical(length(start_dates), length(end_dates))
   targets::tar_assert_true(min(df$start.date) >= min_date)
   targets::tar_assert_true(max(df$start.date) <= max_date)
@@ -100,10 +102,7 @@ take_filter <- function(df){
 order_interval <- function(df){
   df |>
     distinct() |>
-    mutate(midpoint = ifelse(start.date == end.date,
-                             as.numeric(start.date),
-                             as.numeric(start.date) +
-                               (as.numeric(end.date) - as.numeric(start.date)) / 2)
+    mutate(midpoint = as.numeric(end.date)
     ) |>
     ungroup()
 }
@@ -115,6 +114,14 @@ order_interval <- function(df){
 # 2. (heli or plane), with order random
 # 3. hunting
 order_stochastic <- function(order.df){
+
+  n_methods_mid <- order.df |>
+    select(agrp_prp_id, midpoint, method) |>
+    group_by(agrp_prp_id, midpoint) |>
+    count() |>
+    arrange(agrp_prp_id, midpoint)
+
+
   order_df <- order.df
   order_df$jittered_midpoint <- NA
   message("Stochastic ordering...")
@@ -174,7 +181,24 @@ get_fips <- function(file = "data/fips/national_county.txt"){
                    comment = '#')
 }
 
-get_data <- function(file, interval){
+subset_data_for_development <- function(df, n){
+  all_dev_properties <- df |>
+    filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS")) |>
+    select(agrp_prp_id, timestep) |>
+    distinct() |>
+    group_by(agrp_prp_id) |>
+    count() |>
+    filter(n >= 5,
+           n <= 50) |>
+    pull(agrp_prp_id)
+
+  dev_sample <- all_dev_properties[sample.int(length(all_dev_properties), n)]
+
+  df |>
+    filter(agrp_prp_id %in% dev_sample)
+}
+
+get_data <- function(file, interval, dev, n = 50){
   all_take <- read_csv(file) |>
     mutate(cnty_name = if_else(grepl("ST ", cnty_name), gsub("ST ", "ST. ", cnty_name), cnty_name),
            cnty_name = if_else(grepl("KERN", cnty_name), "KERN", cnty_name))
@@ -188,17 +212,19 @@ get_data <- function(file, interval){
            cmp_name = if_else(cmp_name == "TRAPS, CAGE", "TRAPS", cmp_name)) |>
     rename(method = cmp_name,
            trap_count = cmp.qty) |>
-    group_by(unk.prp.event.id) |>
-    mutate(start.date = min(start.date),
-           end.date = max(end.date),
-           effort = sum(effort),
-           take = sum(take)) |>
-    ungroup() |>
     select(-wt_work_date, -hours, -cmp.hours, -cmp.days) |>
     distinct()
 
-  # create PP of length [interval]
-  data_timestep <- create_primary_periods(data_mis, interval)  |>
+    # create PP of length [interval]
+  data_timestep <- create_primary_periods(data_mis, interval)
+
+  if(dev){
+    data_to_model <- subset_data_for_development(data_timestep, n)
+  } else {
+    data_to_model <- data_timestep
+  }
+
+  data_processed <- data_to_model |>
     resolve_duplicate() |>  # resolve duplicate property areas
     dynamic_filter() |>     # filter out bad events & properties
     take_filter() |>        # remove properties with zero pigs taken
@@ -207,7 +233,7 @@ get_data <- function(file, interval){
     order_of_events() |>    # assign order number, check
     county_codes()          # county codes and renaming
 
-  timestep_df <- data_timestep |>
+  timestep_df <- data_processed |>
     select(agrp_prp_id, primary_period) |>
     unique() |>
     arrange(agrp_prp_id, primary_period) |>
@@ -218,7 +244,7 @@ get_data <- function(file, interval){
   # now we have two columns for time
   # primary_period is how [interval] sequences are aligned across the data set
   # timestep is the sequence of primary periods within a property
-  data_pp <- left_join(data_timestep, timestep_df)
+  data_pp <- left_join(data_processed, timestep_df)
 
   return(data_pp)
 
