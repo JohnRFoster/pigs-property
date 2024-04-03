@@ -8,4 +8,4 @@
 #SBATCH --output=outfiles/dev3.txt      # output file
 
 module add R
-Rscript R/1_workflow_mcmc.R SLURM_CPUS_PER_TASK
+Rscript 1_workflow_mcmc.R SLURM_CPUS_PER_TASK
