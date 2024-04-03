@@ -8,7 +8,7 @@ library(dplyr)
 library(tidyr)
 library(readr)
 
-config_name <- "hpc"
+config_name <- "hpc_dev"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
