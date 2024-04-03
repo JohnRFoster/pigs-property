@@ -10,10 +10,10 @@ library(readr)
 
 config_name <- "default"
 config <- config::get(config = config_name)
-interval <- config$interval
 
 source("R/functions_data.R")
 source("R/functions_prep_nimble.R")
+source("R/nimble_removal_model.R")
 
 # ===================================================
 # Data ingest ----
@@ -23,7 +23,10 @@ data_repo <- config$data_repo
 
 ## MIS data ----
 file <- file.path(data_repo, config$file_mis)
-data_mis <- get_data(file, interval)
+interval <- config$interval
+dev <- config$dev
+n <- config$np
+data_mis <- get_data(file, interval, dev, n)
 
 ## observation covariates ----
 file <- file.path(data_repo, config$file_land)
@@ -51,13 +54,33 @@ data_litter_size <- round(
 
 
 
-
 # ===================================================
 # Prepare data for NIMBLE ----
 # ===================================================
 
 constants <- nimble_constants(data_final, data_litter_size, interval)
 data <- nimble_data(data_final, data_litter_size)
+
+inits <- list()
+for(i in 1:3) inits[[i]] <- nimble_inits(constants, data)
+
+model_code <- modelCode
+model_constants <- constants
+model_data <- data
+model_inits <- inits
+
+params_check <- c(
+  "beta_p",
+  "beta1",
+  "log_gamma",
+  "log_rho",
+  "phi_mu",
+  "psi_phi",
+  "log_nu",
+  "p_mu"
+)
+
+monitors_add <- "N"
 
 
 
