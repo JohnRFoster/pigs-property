@@ -13,6 +13,7 @@ config <- config::get(config = config_name)
 
 source("R/functions_data.R")
 source("R/functions_prep_nimble.R")
+source("R/functions_nimble.R")
 source("R/nimble_removal_model.R")
 source("R/mcmc_parallel.R")
 
