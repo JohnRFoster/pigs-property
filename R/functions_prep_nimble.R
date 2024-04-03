@@ -1,5 +1,8 @@
 ## functions called throughout the target pipeline
 
+# ==========================================
+# Helper functions ----
+# ==========================================
 
 # need all timesteps whether there are observations or not
 create_all_primary_periods <- function(df){
@@ -217,6 +220,11 @@ create_X <- function(df, cols = c("c_road_den", "c_rugged", "c_canopy")){
 
 
 
+
+# ==========================================
+# Create lists for nimble ----
+# ==========================================
+
 nimble_constants <- function(df, data_ls, interval){
 
   all_primary_periods <- create_all_primary_periods(df)
@@ -224,6 +232,8 @@ nimble_constants <- function(df, data_ls, interval){
   all_pp <- create_wide_seq(all_primary_periods)
   nH <- N_lookup_table(all_primary_periods)
   nH_p <- N_lookup_data(df, all_primary_periods)
+  N_full_unique <- nH_p |> unique()
+  N_quant_unique <- setdiff(seq(1, max(N_full_unique)), N_full_unique)
   y_sum <- removed_in_pp_cumsum(df)
   rem <- total_take(df, all_primary_periods)
   X <- create_X(df)
@@ -238,9 +248,13 @@ nimble_constants <- function(df, data_ls, interval){
     n_not_first_survey = length(which(df$order != 1)),
     n_method = length(unique(df$method)),
     n_time_prop = n_time_prop,
+    n_Nfull = length(N_full_unique),
+    n_Nquant = length(N_quant_unique),
     all_pp = all_pp,
     nH = nH,
     nH_p = nH_p,
+    N_full_unique = N_full_unique,
+    N_quant_unique = N_quant_unique,
     y_sum = y_sum,
     rem = rem,
     log_pi = log(pi),
@@ -272,4 +286,67 @@ nimble_data <- function(df, data_ls){
     log_survey_area_km2 = log(df$property_area_km2)
   )
 }
+
+
+# ==========================================
+# Create inits for nimble ----
+# ==========================================
+
+
+nimble_inits <- function(constants_nimble, data_nimble, buffer = 250){
+
+  with(append(constants_nimble, data_nimble), {
+
+    beta1 <- rnorm(n_method, 0, 0.25)
+    beta_p <- matrix(rnorm(m_p*n_method, 0, 0.1), n_method, m_p)
+    p_mu <- rnorm(2)
+    log_gamma <- log(runif(2, 0.1, 2))
+    log_rho <- log(
+      c(runif(1, 0.1, 5), runif(1, 50, 150), runif(1, 50, 150), runif(1, 5, 15), runif(1, 5, 15))
+    )
+    psi_phi <- runif(1, 2, 4)
+    phi_mu <- runif(1, 0.7, 0.8)
+    mean_ls <- round(runif(1, 5, 8))
+
+    a <- phi_mu * psi_phi
+    b <- (1 - phi_mu) * psi_phi
+    mean_lpy <- 1
+    zeta <- mean_lpy / 365 * pp_len * mean_ls
+    N <- phi <- rep(NA, max(nH, na.rm = TRUE))
+    n_init <- rep(NA, n_property)
+    for(i in 1:n_property){
+      n_init[i] <- round(exp(log_survey_area_km2[i]) * 5) + sum(rem[i, ], na.rm = TRUE) * 2
+      N[nH[i, 1]] <- n_init[i]
+      for(j in 2:n_time_prop[i]){
+        phi[nH[i, j-1]] <- rbeta(1, a, b)
+        z <- N[nH[i, j-1]] - rem[i, j-1]
+        z <- max(2, z)
+        lambda <- z * zeta / 2 + z * phi[nH[i, j-1]]
+
+        N[nH[i, j]] <- rpois(1, lambda)
+      }
+    }
+
+    list(
+      log_lambda_1 = log(n_init + buffer),
+      beta_p = beta_p,
+      beta1 = beta1,
+      p_mu = p_mu,
+      phi_mu = phi_mu,
+      psi_phi = psi_phi,
+      N = N + buffer,
+      log_nu = log(mean_ls),
+      log_gamma = log_gamma,
+      log_rho = log_rho,
+      phi = phi
+    )
+
+  })
+}
+
+
+
+
+
+
 
