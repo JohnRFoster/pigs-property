@@ -9,4 +9,4 @@ default:
 
 hpc_dev:
   data_repo: "/lustrefs/ceah/feral-swine/data"
-  n_iter: 10000
+  n_iter: 25000
