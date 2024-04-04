@@ -167,11 +167,25 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15)
 
   write_out <- function(p, no, nu, d, c, dest){
-    out_rds <- list(params = p, N_observed = no, N_unobserved = nu, diagnostic = d)
-    f <- "mcmcSamples.rds"
-    if(c < 10) c <- paste0("0", c)
-    ff <- paste0(c, "_", f)
-    write_rds(out_rds, file.path(dest, f))
+
+    c_dir <- sprintf("%04d", c)
+    path <- file.path(dest, c_dir)
+    if(!dir.exists(path)) dir.create(path, showWarnings = FALSE, recursive = TRUE)
+
+    f <- "paramSamples.rds"
+    write_rds(list(params = p,
+                   diagnostic = d),
+              file.path(path, f))
+
+    converged <- all(d$psrf[, 2] < 1.1)
+    if(converged){
+      f <- "observedAbundanceSamples.rds"
+      write_rds(no, file.path(path, f))
+
+      f <- "unobservedAbundanceQuantiles.rds"
+      write_rds(nu, file.path(path, f))
+    }
+
   }
 
   if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
