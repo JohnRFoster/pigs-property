@@ -7,7 +7,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   require(foreach)
   require(coda)
   require(doParallel)
-
+ 
   single_mcmc_chain <- function(){
     require(nimble)
     source("R/functions_nimble.R")
