@@ -302,7 +302,7 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 250){
     N <- phi <- lambda <- rep(NA, max(nH, na.rm = TRUE))
     n_init <- rep(NA, n_property)
     for(i in 1:n_property){
-      n_init[i] <- round(exp(log_survey_area_km2[i]) * 2.5) + sum(rem[i, ], na.rm = TRUE) * 2
+      n_init[i] <- round(exp(log_survey_area_km2[i]) * 5) + sum(rem[i, ], na.rm = TRUE) * 2
       N[nH[i, 1]] <- n_init[i]
       for(j in 2:n_time_prop[i]){
         phi[nH[i, j-1]] <- rbeta(1, a, b)
