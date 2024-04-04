@@ -73,7 +73,8 @@ total_take <- function(df_take, df_pp){
     summarise(sum_take = sum(take)) |>
     ungroup()
 
-  left_join(df_pp, sum_take) |>
+  left_join(df_pp, sum_take,
+            by = join_by(property, primary_period)) |>
     mutate(sum_take = if_else(is.na(sum_take), 0, sum_take)) |>
     select(-primary_period) |>
     pivot_wider(names_from = timestep,
@@ -91,7 +92,7 @@ N_lookup_data <- function(df_take, df_pp){
   df_pp |>
     select(property, primary_period) |>
     mutate(n_id = 1:n()) |>
-    right_join(tH) |>
+    right_join(tH, by = join_by(property, primary_period)) |>
     pull(n_id)
 }
 
@@ -101,7 +102,8 @@ create_start_end <- function(df_take, df_pp){
 
   start <- end <- numeric(nrow(df_take))
 
-  df <- left_join(df_take, df_pp)
+  df <- left_join(df_take, df_pp,
+                  by = join_by(primary_period, property))
 
   message("Creating start/end indicies")
   pb <- txtProgressBar(max = nrow(df), style = 1)
@@ -175,14 +177,15 @@ create_surv_prior <- function(interval, data_repo){
     group_by(unique.ID) |>
     summarise(sd = max(sd_high, sd_low))
 
-  surv_var_join <- left_join(surv_var, surv_sd_calc) |>
+  surv_var_join <- left_join(surv_var, surv_sd_calc,
+                             by = join_by(unique.ID)) |>
     filter(survival.var.type != "SD")
 
   scale_ids <- surv_mu |>
     select(unique.ID, scale_factor)
 
   surv_variance <- bind_rows(surv_var_join, surv_sd) |>
-    left_join(scale_ids) |>
+    left_join(scale_ids, by = join_by(unique.ID)) |>
     mutate(variance = sd^2,
            variance.4week = variance * scale_factor^2,
            sd.4week = sqrt(variance.4week))
