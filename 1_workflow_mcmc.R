@@ -91,7 +91,9 @@ monitors_add <- "N"
 
 cl <- makeCluster(n_chains)
 
-dest <- "/lustrefs/ceah/feral-swine/dev/mcmc"
+out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
+np_dir <- paste0("dev", config$np)
+dest <- file.path(out_dir, np_dir)
 
 mcmc_parallel(
   cl = cl,
