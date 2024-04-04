@@ -1,7 +1,7 @@
 default:
   interval: 4
   dev: TRUE
-  np: 50
+  np: 100
   n_iter: 10000
   data_repo: "C:/Users/John.Foster/OneDrive - USDA/Desktop/fosteR/pigs-statistical/data"
   file_mis: "insitu/MIS.Effort.Take.All.Methods.Daily.Events.2021-03-25.csv"
