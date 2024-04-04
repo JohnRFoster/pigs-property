@@ -280,7 +280,7 @@ nimble_data <- function(df, data_ls){
 # ==========================================
 
 
-nimble_inits <- function(constants_nimble, data_nimble, buffer = 250){
+nimble_inits <- function(constants_nimble, data_nimble, buffer = 500){
 
   with(append(constants_nimble, data_nimble), {
 
