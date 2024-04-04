@@ -200,11 +200,11 @@ subset_data_for_development <- function(df, n){
   }
 
   new_df <- sample_filter()
-  not_all_methods <- n_prop < length(unique(new_df$method))
+  not_all_methods <- length(unique(new_df$method)) < 5
 
   while(not_all_methods){
     new_df <- sample_filter()
-    not_all_methods <- n_prop < length(unique(new_df$method))
+    not_all_methods <- length(unique(new_df$method)) < 5
   }
   return(new_df)
 }
