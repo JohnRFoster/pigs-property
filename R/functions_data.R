@@ -189,21 +189,21 @@ subset_data_for_development <- function(df, n){
     group_by(agrp_prp_id) |>
     count() |>
     filter(n >= 5,
-           n <= 50) |>
+           n <= 75) |>
     pull(agrp_prp_id)
 
-  sample_filter <- function(){
-    dev_sample <- all_dev_properties[sample.int(length(all_dev_properties), n)]
+  sample_filter <- function(df, props, n){
+    dev_sample <- props[sample.int(length(props), n)]
 
     df |>
       filter(agrp_prp_id %in% dev_sample)
   }
 
-  new_df <- sample_filter()
+  new_df <- sample_filter(df, all_dev_properties, n)
   not_all_methods <- length(unique(new_df$method)) < 5
 
   while(not_all_methods){
-    new_df <- sample_filter()
+    new_df <- sample_filter(df, all_dev_properties, n)
     not_all_methods <- length(unique(new_df$method)) < 5
   }
   return(new_df)
