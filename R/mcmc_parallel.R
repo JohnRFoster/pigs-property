@@ -1,4 +1,20 @@
+#---------
+#
+# Workhorse function for running nimble in parallel
+#
+#---------
 
+#'@description Run nimble on specified cluster, check for convergence and save samples periodically
+#'@param cl Cluster made using the parallel package
+#'@param model_code the nimble model code
+#'@param model_constants model constants, as a list
+#'@param model_data model data, as a list
+#'@param model_inits initial model values, as a list, one list element for each chain
+#'@param params_check vector of parameters (nodes) to assess convergence
+#'@param n_iters the number of iterations to run in each chunk after the model has compiled
+#'@param dest output filepath. within this directory each 'chunk' will be saved into it's own directory
+#'@param monitors_add vector of nodes to monitor in addition to default nodes
+#'@param custom_samplers data frame of mcmc config. Nodes in one column, sampler types in another
 
 
 mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_inits,
@@ -8,8 +24,13 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   require(coda)
   require(doParallel)
 
+  # add function arguments to the local environment, needed for exporting to 'cl'
   as.list(environment(), all = TRUE)
 
+  # compile model
+  # this function gets passed as an argument and runs on each cluster of 'cl'
+  # runs through typical nimble set-up precidure
+  # can add nodes to monitors and change samplers from the default configuration
   single_mcmc_chain <- function(){
     require(nimble)
     source("R/functions_nimble.R")
@@ -48,6 +69,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
                               useConjugacy = TRUE)
 
 
+    # if specified, change nodes to specified parameters
     if(!is.null(custom_samplers)){
       for(i in seq_len(nrow(custom_samplers))){
         node <- custom_samplers$node[i]
@@ -72,21 +94,25 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
     Rmcmc <- buildMCMC(mcmcConf)
     Cmodel <- compileNimble(Rmodel)
-    Cmcmc <<- compileNimble(Rmcmc)
+    Cmcmc <<- compileNimble(Rmcmc) # need to define this in the global environment to continue mcmc
     Cmcmc$run(niter = 1000, nburnin = 0)
     samples <- as.matrix(Cmcmc$mvSamples)
     return(samples)
 
   }
 
+  # sample for the specified duration 'n_iters'
+  # drop previous samples (we save them after each time this function is called, so we don't need them)
   continue_sampling <- function(){
     require(nimble)
     require(coda)
     Cmcmc$run(niter = n_iters, reset = FALSE, resetMV = TRUE)
-    samples <<- as.matrix(Cmcmc$mvSamples)
+    samples <<- as.matrix(Cmcmc$mvSamples) # need to define this in the global environment to use in subset_mcmc
     return(samples)
   }
 
+  # for taking nodes and splitting them from an mcmc list
+  # as is, does one node at a time but can be passed to lapply to use on a vector of nodes
   subset_mcmc <- function(node){
     require(dplyr)
     s <- samples[,grep(node, colnames(samples), value = TRUE, fixed = TRUE)] |>
@@ -96,23 +122,25 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     return(s)
   }
 
+  # get parameter nodes using subset_mcmc
   subset_params <- function(){
     require(dplyr)
     require(purrr)
     map_dfc(lapply(params_check, subset_mcmc), as_tibble) |> as.matrix()
   }
 
+  # get observed abundance nodes using subset_mcmc
   subset_N_observed <- function(){
-    map_dfc(lapply(paste0("N[", observed_state_nodes, "]"), subset_mcmc), as_tibble) |> as.matrix()
+    nodes <- paste0("N[", model_constants$N_full_unique, "]")
+    map_dfc(lapply(nodes, subset_mcmc), as_tibble) |> as.matrix()
   }
 
+  # get unobserved abundance nodes using subset_mcmc
   subset_N_unobserved <- function(){
-    N_unobserved <- map_dfc(lapply(paste0("N[", unobserved_state_nodes, "]"), subset_mcmc), as_tibble) |> as.matrix()
+    nodes <- paste0("N[", model_constants$N_quant_unique, "]")
+    N_unobserved <- map_dfc(lapply(nodes, subset_mcmc), as_tibble) |> as.matrix()
     t(apply(N_unobserved, 2, quantile, c(0.025, 0.5, 0.975)))
   }
-
-  observed_state_nodes <- model_constants$N_full_unique
-  unobserved_state_nodes <- model_constants$N_quant_unique
 
   export <- c(
     "single_mcmc_chain",
@@ -127,9 +155,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     "n_iters",
     "custom_samplers",
     "monitors_add",
-    "params_check",
-    "observed_state_nodes",
-    "unobserved_state_nodes"
+    "params_check"
   )
 
   clusterExport(cl, export, envir = environment())
@@ -143,7 +169,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   c <- 1
   start <- Sys.time()
   out <- clusterEvalQ(cl, single_mcmc_chain())
-  message("Model compile and initial ", 1000, " iterations completed in:")
+  message("Model compile and initial 1000 iterations completed in:")
   print(round(Sys.time() - start, 2))
 
   start2 <- Sys.time()
@@ -151,7 +177,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   message("Additional ", n_iters, " iterations completed in:")
   print(round(Sys.time() - start2, 2))
 
-  message("\nTotal iterations ", n_iters * c, " completed in:")
+  message("\n", n_iters * c, " total iterations completed in:")
   print(round(Sys.time() - start, 2))
 
   # use mcmc on clusters to subset parameters, observed states, and unobserved states
@@ -188,7 +214,6 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
   }
 
-  if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
   write_out(params, N_observed, N_unobserved, diagnostic, c, dest)
 
   continue <- !diagnostic$done
@@ -202,7 +227,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     message("Additional ", n_iters, " iterations completed in:")
     print(round(Sys.time() - start2, 2))
 
-    message("\nTotal iterations ", n_iters * c, " completed in:")
+    message("\n", n_iters * c, " total iterations completed in:")
     print(round(Sys.time() - start, 2))
 
     # use mcmc on clusters to subset parameters, observed states, and unobserved states
@@ -214,8 +239,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
     N_unobserved <- clusterEvalQ(cl, subset_N_unobserved()) |> as.matrix()
 
-    params_mcmc_list <- as.mcmc.list(lapply(params, as.mcmc))
-    diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15)
+    diagnostic <- continue_mcmc(params, effective_size = 5000, max_psrf = 15)
 
     write_out(params, N_observed, N_unobserved, diagnostic, c, dest)
 
