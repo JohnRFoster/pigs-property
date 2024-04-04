@@ -99,6 +99,39 @@ out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
 np_dir <- paste0("dev", config$np)
 dest <- file.path(out_dir, np_dir)
 
+message("\n\n=== Test build ===")
+
+Rmodel <- nimbleModel(
+  code = modelCode,
+  constants = constants,
+  data = data,
+  inits = inits[[1]],
+  calculate = FALSE
+)
+
+Rmodel$initializeInfo()
+
+N <- Rmodel$N
+nH_p <- model_constants$nH_p
+n_survey <- model_constants$n_survey
+y_sum <- model_constants$y_sum
+
+for(i in 1:n_survey){
+  N_model <- N[nH_p[i]]
+  n <- round(N_model - y_sum[i])
+  if(n <= 0){
+    print(i)
+    Rmodel$N[nH_p[i]] <- N_model + abs(n)^2
+  }
+}
+
+calc <- Rmodel$calculate()
+if(is.infinite(calc) | is.nan(calc) | is.na(calc)){
+  stop(paste0("Model log probability is ", calc))
+}
+
+message("==================\n")
+
 mcmc_parallel(
   cl = cl,
   model_code = modelCode,
