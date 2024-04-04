@@ -19,7 +19,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
       constants = model_constants,
       data = model_data,
       inits = init,
-      calculate = FALSE
+      calculate = TRUE
     )
 
     Rmodel$initializeInfo()
@@ -38,10 +38,10 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
       }
     }
 
-    calc <- Rmodel$calculate()
-    if(is.infinite(calc) | is.nan(calc) | is.na(calc)){
-      stop(paste0("Model log probability is ", calc))
-    }
+    # calc <- Rmodel$calculate()
+    # if(is.infinite(calc) | is.nan(calc) | is.na(calc)){
+    #   stop(paste0("Model log probability is ", calc))
+    # }
 
     # default MCMC configuration
     mcmcConf <- configureMCMC(Rmodel,
