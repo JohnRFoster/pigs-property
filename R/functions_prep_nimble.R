@@ -43,15 +43,6 @@ n_timesteps <- function(df){
     pull(timestep)
 }
 
-# the actual primary period sequence for each property in wide format
-create_wide_seq <- function(df){
-  df |>
-    pivot_wider(names_from = timestep,
-                values_from = primary_period) |>
-    select(-property) |>
-    as.matrix()
-}
-
 # index (as a matrix) for tracking abundance in long format (converting wide to long)
 # used in the process model
 N_lookup_table <- function(df){
@@ -229,7 +220,6 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
 
   all_primary_periods <- create_all_primary_periods(df)
   n_time_prop <- n_timesteps(all_primary_periods)
-  all_pp <- create_wide_seq(all_primary_periods)
   nH <- N_lookup_table(all_primary_periods)
   nH_p <- N_lookup_data(df, all_primary_periods)
   N_full_unique <- nH_p |> unique()
@@ -248,9 +238,6 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
     n_not_first_survey = length(which(df$order != 1)),
     n_method = length(unique(df$method)),
     n_time_prop = n_time_prop,
-    n_Nfull = length(N_full_unique),
-    n_Nquant = length(N_quant_unique),
-    all_pp = all_pp,
     nH = nH,
     nH_p = nH_p,
     N_full_unique = N_full_unique,
@@ -260,8 +247,6 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
     log_pi = log(pi),
     first_survey = which(df$order == 1),
     not_first_survey = which(df$order != 1),
-    p_property_idx = as.numeric(as.factor(df$property)),
-    p_pp_idx = df$primary_period,
     m_p = ncol(X),
     start = start_end$start,
     end = start_end$end,
