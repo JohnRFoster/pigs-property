@@ -65,12 +65,12 @@ data_litter_size <- round(
 constants <- nimble_constants(data_final, data_litter_size, interval, data_repo)
 data <- nimble_data(data_final, data_litter_size)
 
-inits <- list()
 n_chains <- as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK"))
 if(is.na(n_chains)) n_chains <- 3
 
 message(n_chains, " chains")
 
+inits <- list()
 for(i in seq_len(n_chains)){
   set.seed(i)
   inits[[i]] <- nimble_inits(constants, data)
@@ -100,12 +100,12 @@ np_dir <- paste0("dev", config$np)
 dest <- file.path(out_dir, np_dir)
 
 message("\n\n=== Test build ===")
-
+itest <- inits[[1]]
 Rmodel <- nimbleModel(
   code = modelCode,
   constants = constants,
   data = data,
-  inits = inits[[1]],
+  inits = itest,
   calculate = FALSE
 )
 
@@ -114,7 +114,7 @@ Rmodel$initializeInfo()
 N <- Rmodel$N
 nH_p <- constants$nH_p
 n_survey <- constants$n_survey
-y_sum <- constants$y_sum
+y_sum <- data$y_sum
 
 for(i in 1:n_survey){
   N_model <- N[nH_p[i]]
