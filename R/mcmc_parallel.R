@@ -34,8 +34,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
       n <- round(N_model - y_sum[i])
       if(n <= 0){
         print(i)
-        n <- ifelse(n == 0, 2, n)
-        Rmodel$N[nH_p[i]] <- N_model + n^2
+        Rmodel$N[nH_p[i]] <- N_model + abs(n)^2
       }
     }
 
