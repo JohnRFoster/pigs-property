@@ -188,8 +188,7 @@ subset_data_for_development <- function(df, n){
     distinct() |>
     group_by(agrp_prp_id) |>
     count() |>
-    filter(n >= 5,
-           n <= 75) |>
+    filter(n >= 5) |>
     pull(agrp_prp_id)
 
   sample_filter <- function(df, props, n){
