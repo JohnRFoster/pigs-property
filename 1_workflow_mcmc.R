@@ -112,9 +112,9 @@ Rmodel <- nimbleModel(
 Rmodel$initializeInfo()
 
 N <- Rmodel$N
-nH_p <- model_constants$nH_p
-n_survey <- model_constants$n_survey
-y_sum <- model_constants$y_sum
+nH_p <- constants$nH_p
+n_survey <- constants$n_survey
+y_sum <- constants$y_sum
 
 for(i in 1:n_survey){
   N_model <- N[nH_p[i]]
