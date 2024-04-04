@@ -192,10 +192,21 @@ subset_data_for_development <- function(df, n){
            n <= 50) |>
     pull(agrp_prp_id)
 
-  dev_sample <- all_dev_properties[sample.int(length(all_dev_properties), n)]
+  sample_filter <- function(){
+    dev_sample <- all_dev_properties[sample.int(length(all_dev_properties), n)]
 
-  df |>
-    filter(agrp_prp_id %in% dev_sample)
+    df |>
+      filter(agrp_prp_id %in% dev_sample)
+  }
+
+  new_df <- sample_filter()
+  not_all_methods <- n_prop < length(unique(new_df$method))
+
+  while(not_all_methods){
+    new_df <- sample_filter()
+    not_all_methods <- n_prop < length(unique(new_df$method))
+  }
+  return(new_df)
 }
 
 get_data <- function(file, interval, dev, n = 50){
