@@ -226,7 +226,6 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
   nH_p <- N_lookup_data(df, all_primary_periods)
   N_full_unique <- nH_p |> unique()
   N_quant_unique <- setdiff(seq(1, max(N_full_unique)), N_full_unique)
-  y_sum <- removed_in_pp_cumsum(df)
   rem <- total_take(df, all_primary_periods)
   X <- create_X(df)
   start_end <- create_start_end(df, all_primary_periods)
@@ -261,6 +260,7 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
 nimble_data <- function(df, data_ls){
 
   X <- create_X(df)
+  y_sum <- removed_in_pp_cumsum(df)
 
   list(
     y = df$take,
