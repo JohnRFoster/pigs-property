@@ -106,7 +106,7 @@ Rmodel <- nimbleModel(
   constants = constants,
   data = data,
   inits = itest,
-  calculate = FALSE
+  calculate = TRUE
 )
 
 Rmodel$initializeInfo()
