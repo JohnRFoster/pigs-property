@@ -27,7 +27,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     N <- Rmodel$N
     nH_p <- model_constants$nH_p
     n_survey <- model_constants$n_survey
-    y_sum <- model_constants$y_sum
+    y_sum <- model_data$y_sum
 
     for(i in 1:n_survey){
       N_model <- N[nH_p[i]]
