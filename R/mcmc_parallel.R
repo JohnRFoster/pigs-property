@@ -144,15 +144,15 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   start <- Sys.time()
   out <- clusterEvalQ(cl, single_mcmc_chain())
   message("Model compile and initial ", 1000, " iterations completed in:")
-  print(Sys.time() - start)
+  print(round(Sys.time() - start, 2))
 
   start2 <- Sys.time()
   out2 <- clusterEvalQ(cl, continue_sampling())
   message("Additional ", n_iters, " iterations completed in:")
-  print(Sys.time() - start2)
+  print(round(Sys.time() - start2, 2))
 
   message("\nTotal iterations ", n_iters * c, " completed in:")
-  print(Sys.time() - start)
+  print(round(Sys.time() - start, 2))
 
   # use mcmc on clusters to subset parameters, observed states, and unobserved states
   params <- clusterEvalQ(cl, subset_params())
@@ -186,10 +186,10 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     start2 <- Sys.time()
     out2 <- clusterEvalQ(cl, continue_sampling())
     message("Additional ", n_iters, " iterations completed in:")
-    print(Sys.time() - start2)
+    print(round(Sys.time() - start2, 2))
 
     message("\nTotal iterations ", n_iters * c, " completed in:")
-    print(Sys.time() - start)
+    print(round(Sys.time() - start, 2))
 
     # use mcmc on clusters to subset parameters, observed states, and unobserved states
     params <- clusterEvalQ(cl, subset_params())
