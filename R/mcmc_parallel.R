@@ -6,7 +6,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
   require(foreach)
   require(coda)
-  require(doParallel) 
+  require(doParallel)
 
   as.list(environment(), all = TRUE)
 
@@ -136,7 +136,6 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   clusterExport(cl, export, envir = environment())
 
   for(i in seq_along(cl)){
-    set.seed(i)
     init <- model_inits[[i]]
     clusterExport(cl[i], "init", envir = environment())
   }

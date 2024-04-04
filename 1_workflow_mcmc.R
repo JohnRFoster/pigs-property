@@ -70,7 +70,10 @@ if(is.na(n_chains)) n_chains <- 3
 
 message(n_chains, " chains")
 
-for(i in seq_len(n_chains)) inits[[i]] <- nimble_inits(constants, data)
+for(i in seq_len(n_chains)){
+  set.seed(i)
+  inits[[i]] <- nimble_inits(constants, data)
+}
 
 params_check <- c(
   "beta_p",
