@@ -56,7 +56,7 @@ resolve_duplicate <- function(insitu_data){
     ungroup()
 
   insitu_data |>
-    left_join(property_areas) |>
+    left_join(property_areas, by = join_by(agrp_prp_id, property_area_km2)) |>
     filter(!is.na(property_area_km2),
            property_area_km2 >= 1.8,
            effort > 0)
@@ -255,7 +255,8 @@ get_data <- function(file, interval, dev, n = 50){
   # now we have two columns for time
   # primary_period is how [interval] sequences are aligned across the data set
   # timestep is the sequence of primary periods within a property
-  data_pp <- left_join(data_processed, timestep_df)
+  data_pp <- left_join(data_processed, timestep_df,
+                       by = join_by(agrp_prp_id, primary_period))
 
   return(data_pp)
 

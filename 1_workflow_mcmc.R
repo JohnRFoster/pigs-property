@@ -36,7 +36,8 @@ file <- file.path(data_repo, config$file_land)
 data_obs <- get_obs_covars(file)
 
 ## join MIS with observation covariates ----
-data_join <- left_join(data_mis, data_obs)
+data_join <- left_join(data_mis, data_obs,
+                       by = join_by(county_code))
 
 ## filter missing states ----
 data_final <- data_join |>
