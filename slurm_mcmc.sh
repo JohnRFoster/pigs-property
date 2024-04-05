@@ -2,10 +2,10 @@
 #SBATCH --ntasks=1                      # number of processes to run
 #SBATCH --nodes=1                       # default number of nodes
 #SBATCH --partition=cpu_compute         # good enough for what I need
-#SBATCH --cpus-per-task=3               # for a multithredded job
+#SBATCH --cpus-per-task=7               # for a multithredded job
 #SBATCH --mem=50g                       # memory
-#SBATCH --job-name=dev3                 # job name
-#SBATCH --output=outfiles/dev3.txt      # output file
+#SBATCH --job-name=dev7_300                 # job name
+#SBATCH --output=outfiles/dev7_300.txt      # output file
 
 module add R
 Rscript 1_workflow_mcmc.R SLURM_CPUS_PER_TASK

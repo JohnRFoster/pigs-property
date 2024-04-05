@@ -246,7 +246,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     continue <- !diagnostic$done
     message("=================================================")
 
-    if(c == 100) continue <- FALSE
+    if(c == 50) continue <- FALSE
   }
 
 
