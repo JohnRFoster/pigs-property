@@ -55,7 +55,7 @@ dest <- file.path(out_dir, np_dir)
 if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
 message("Creating traceplots...")
-jpeg(filename = file.path(dest, "mcmcTimeseries%03d.jpg"))
+jpeg(filename = file.path(dest, "mcmcTimeseries%03d.jpg"), type = "cairo")
 plot(params_mcmc_list)
 dev.off()
 message("  done")
