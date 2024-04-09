@@ -35,8 +35,8 @@ for(j in seq_len(n_chains)){
   store_mcmc[[j]] <- as.matrix(mcmc[[j]])
 }
 
-pb <- txtProgressBar(min = 2, max = lengh(mcmc_dirs), style = 1)
-for(i in 2:lengh(mcmc_dirs)){
+pb <- txtProgressBar(min = 2, max = length(mcmc_dirs), style = 1)
+for(i in 2:length(mcmc_dirs)){
   mcmc_rds <- file.path(dest, mcmc_dirs[i], param_file_name)
   rds <- read_rds(mcmc_rds)
   mcmc <- rds$params
