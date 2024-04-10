@@ -22,7 +22,6 @@ config <- config::get(config = config_name)
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
 np_dir <- paste0("dev", config$np)
 dest <- file.path(out_dir, np_dir)
-dest <- "C:/Users/John.Foster/Downloads/dev300"
 
 mcmc_dirs <- list.files(dest)
 param_file_name <- "paramSamples.rds"
