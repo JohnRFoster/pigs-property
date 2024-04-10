@@ -11,6 +11,7 @@ library(tidyr)
 library(readr)
 library(parallel)
 library(coda)
+library(ggplot2)
 
 source("R/functions_nimble.R")
 
@@ -21,6 +22,7 @@ config <- config::get(config = config_name)
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
 np_dir <- paste0("dev", config$np)
 dest <- file.path(out_dir, np_dir)
+dest <- "C:/Users/John.Foster/Downloads/dev300"
 
 mcmc_dirs <- list.files(dest)
 param_file_name <- "paramSamples.rds"
@@ -54,8 +56,67 @@ np_dir <- paste0("dev", config$np, "combined")
 dest <- file.path(out_dir, np_dir)
 if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
+posterior <- tibble()
+message("Create posterior tibble...")
+pb <- txtProgressBar(min = 1, max = n_chains, style = 1)
+for(i in seq_len(n_chains)){
+  chain_i <- as.matrix(store_mcmc[[i]]) |>
+    as_tibble() |>
+    mutate(chain = i)
+  posterior <- bind_rows(posterior, chain_i)
+
+  setTxtProgressBar(pb, i)
+}
+close(pb)
+message("  done")
+
+
+trace_plot <- function(post, nodes_2_plot, thin = 5000){
+  df <- post |>
+    select(chain, all_of(nodes_2_plot)) |>
+    group_by(chain) |>
+    mutate(iteration = 1:n()) |>
+    ungroup()
+
+  total_iterations <- max(df$iteration)
+  thin_interval <- floor(seq(1, total_iterations, length.out = thin))
+
+  gg <- df |>
+    filter(iteration %in% thin_interval) |>
+    pivot_longer(cols = -c(iteration, chain),
+                 names_to = "node") |>
+    mutate(chain = as.character(chain)) |>
+    ggplot() +
+    aes(x = iteration, y = value, color = chain) +
+    geom_line() +
+    facet_wrap(~ node, scales = "free_y") +
+    labs(x = "Iteration",
+         y = "Value") +
+    theme_bw()
+  return(gg)
+}
+
+nodes <- setdiff(colnames(posterior), "chain")
+
+plots <- tibble(
+  nodes = nodes,
+  idx = rep(seq(1, ceiling(length(nodes)/4), by = 1), each = 4)[1:length(nodes)]
+)
+
 message("Creating traceplots...")
-bmp(filename = file.path(dest, "mcmcTimeseries%03d.bmp"))
-plot(params_mcmc_list)
-dev.off()
+pb <- txtProgressBar(min = 1, max = max(plots$idx), style = 1)
+for(i in seq_along(unique(plots$idx))){
+  n2p <- plots |>
+    filter(idx == i) |>
+    pull(nodes)
+
+  gg <- trace_plot(posterior, n2p)
+
+  filename <- file.path(dest, paste0("mcmcTimeseries_", sprintf("%03d", i), ".jpeg"))
+  ggsave(filename, gg)
+
+  setTxtProgressBar(pb, i)
+}
+close(pb)
+
 message("  done")
