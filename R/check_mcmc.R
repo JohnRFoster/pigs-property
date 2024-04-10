@@ -102,6 +102,9 @@ plots <- tibble(
   idx = rep(seq(1, ceiling(length(nodes)/4), by = 1), each = 4)[1:length(nodes)]
 )
 
+np_dir <- paste0("dev", config$np, "combined")
+dest <- file.path(out_dir, np_dir)
+
 message("Creating traceplots...")
 pb <- txtProgressBar(min = 1, max = max(plots$idx), style = 1)
 for(i in seq_along(unique(plots$idx))){
