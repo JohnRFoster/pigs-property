@@ -73,6 +73,19 @@ for(i in seq_len(n_chains)){
 close(pb)
 message("  done")
 
+# get a random sample of the posterior and save
+draws <- sample.int(nrow(posterior), 5000, replace = TRUE)
+posterior_samples <- posterior |>
+  slice(draws) |>
+  mutate(np = config$np)
+
+# create dir for posterior samples and traceplots
+np_dir <- paste0("dev", config$np, "combined")
+dest <- file.path(out_dir, np_dir)
+if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+
+write_rds(posterior_samples, file.path(dest, "posteriorSamples.rds"))
+
 # function to create traceplots from thinned posterior
 trace_plot <- function(post, nodes_2_plot, thin = 5000){
   df <- post |>
@@ -80,6 +93,12 @@ trace_plot <- function(post, nodes_2_plot, thin = 5000){
     group_by(chain) |>
     mutate(iteration = 1:n()) |>
     ungroup()
+
+  posterior_mat <- df |>
+    select(-chain, -iteration) |>
+    as.matrix()
+
+  print(apply(posterior_mat, 2, quantile, c(0.025, 0.5, 0.975)))
 
   total_iterations <- max(df$iteration)
   thin_interval <- floor(seq(1, total_iterations, length.out = thin))
@@ -106,11 +125,6 @@ plots <- tibble(
   nodes = nodes,
   idx = rep(seq(1, ceiling(length(nodes)/4), by = 1), each = 4)[1:length(nodes)]
 )
-
-# create dir for traceplots
-np_dir <- paste0("dev", config$np, "combined")
-dest <- file.path(out_dir, np_dir)
-if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
 message("Creating traceplots...")
 pb <- txtProgressBar(min = 1, max = max(plots$idx), style = 1)
