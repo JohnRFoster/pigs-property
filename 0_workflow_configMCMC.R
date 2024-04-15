@@ -108,7 +108,7 @@ out <- foreach(
     MCMCs = mcmc_name,
     nimbleMCMCdefs = mcmc_engine,
     monitors = params_check,
-    MCMCcontrol = list(niter = 500, burnin = 10)
+    MCMCcontrol = list(niter = 5000, burnin = 1000)
   )
 
   mcmc_out
