@@ -5,27 +5,27 @@ nimbleMCMCdefs <- list(
     mcmcConf
   },
 
-  default_thetaBlock_afSlice = function(model){
-    mcmcConf <- configureMCMC(model)
-    for(i in 1:5){
-      node <- paste0("beta_p[", i, ", ", 1:m_p, "]")
-      node <- c(paste0("beta1[", i, "]"), node)
-      mcmcConf$removeSampler(node)
-      mcmcConf$addSampler(node, "AF_slice")
-    }
-    mcmcConf
-  },
-
-  default_thetaBlock_rwBlock = function(model){
-    mcmcConf <- configureMCMC(model)
-    for(i in 1:5){
-      node <- paste0("beta_p[", i, ", ", 1:m_p, "]")
-      node <- c(paste0("beta1[", i, "]"), node)
-      mcmcConf$removeSampler(node)
-      mcmcConf$addSampler(node, "RW_block")
-    }
-    mcmcConf
-  },
+  # default_thetaBlock_afSlice = function(model){
+  #   mcmcConf <- configureMCMC(model)
+  #   for(i in 1:5){
+  #     node <- paste0("beta_p[", i, ", ", 1:m_p, "]")
+  #     node <- c(paste0("beta1[", i, "]"), node)
+  #     mcmcConf$removeSampler(node)
+  #     mcmcConf$addSampler(node, "AF_slice")
+  #   }
+  #   mcmcConf
+  # },
+  #
+  # default_thetaBlock_rwBlock = function(model){
+  #   mcmcConf <- configureMCMC(model)
+  #   for(i in 1:5){
+  #     node <- paste0("beta_p[", i, ", ", 1:m_p, "]")
+  #     node <- c(paste0("beta1[", i, "]"), node)
+  #     mcmcConf$removeSampler(node)
+  #     mcmcConf$addSampler(node, "RW_block")
+  #   }
+  #   mcmcConf
+  # },
 
   slice_scalars1 = function(model){
     mcmcConf <- configureMCMC(model)
