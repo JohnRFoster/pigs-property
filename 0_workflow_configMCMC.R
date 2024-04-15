@@ -117,11 +117,13 @@ out <- foreach(
 stopCluster(cl)
 message("  done")
 
+str(out)
+
 # MCMC efficiency for a parameter is defined as the effective sample size divided by
 # the computation time in seconds
 # i.e. It is the number of effectively independent samples generated per second.
 
-message("====== Efficiency by MCMC engine ======")
+message("\n\n====== Efficiency by MCMC engine ======")
 get_byMCMC <- function(x) combineMetrics(x)$byMCMC
 map(out, get_byMCMC) |> list_rbind()
 
