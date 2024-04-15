@@ -6,7 +6,9 @@ default:
   data_repo: "C:/Users/John.Foster/OneDrive - USDA/Desktop/fosteR/pigs-statistical/data"
   file_mis: "insitu/MIS.Effort.Take.All.Methods.Daily.Events.2021-03-25.csv"
   file_land: 'covariates/FINAL.Process.Model.Observation.Covariates.12Jan2018.csv'
+  file_init: "C:/Users/John.Foster/Downloads/dev300/paramSamples.rds"
 
 hpc_dev:
   data_repo: "/lustrefs/ceah/feral-swine/data"
+  file_init: "/lustrefs/ceah/feral-swine/property-fits/dev300/0027/paramSamples.rds"
   n_iter: 40000

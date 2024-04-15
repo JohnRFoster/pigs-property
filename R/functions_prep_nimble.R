@@ -338,6 +338,77 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 500){
   })
 }
 
+nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble){
+
+  rds <- read_rds(posterior_file)
+  params <- as_tibble(as.matrix(rds$params))
+  draw <- sample.int(nrow(params), 1)
+  init <- params |> slice(draw)
+
+  get_vec <- function(df, node){
+    df |>
+      select(contains(node)) |>
+      pivot_longer(cols = everything()) |>
+      pull(value)
+  }
+
+  beta_p_vec <- get_vec(init, "beta_p")
+  beta_p <- matrix(beta_p_vec, 5, 3)
+
+  beta1 <- get_vec(init, "beta1")
+  p_mu <- get_vec(init, "p_mu")
+  phi_mu <- get_vec(init, "phi_mu")
+  psi_phi <- get_vec(init, "psi_phi")
+  log_nu <- get_vec(init, "log_nu")
+  log_gamma <- get_vec(init, "log_gamma")
+  log_rho <- get_vec(init, "log_rho")
+
+  log_survey_area_km2 <- data$log_survey_area_km2
+  rem <- constants$rem
+  n_property <- constants$n_property
+  nH <- constants$nH
+  n_time_prop <- constants$n_time_prop
+  pp_len <- constants$pp_len
+
+  a <- phi_mu * psi_phi
+  b <- (1 - phi_mu) * psi_phi
+  mean_lpy <- 1
+  zeta <- mean_lpy / 365 * pp_len * exp(log_nu)
+  N <- phi <- lambda <- rep(NA, max(nH, na.rm = TRUE))
+  n_init <- rep(NA, n_property)
+  for(i in 1:n_property){
+    n_init[i] <- round(exp(log_survey_area_km2[i]) * 5) + sum(rem[i, ], na.rm = TRUE) * 2
+    N[nH[i, 1]] <- n_init[i]
+    for(j in 2:n_time_prop[i]){
+      phi[nH[i, j-1]] <- rbeta(1, a, b)
+      z <- N[nH[i, j-1]] - rem[i, j-1]
+      z <- max(1, z)
+      lambda[nH[i, j-1]] <- z * zeta / 2 + z * phi[nH[i, j-1]]
+
+      N[nH[i, j]] <- rpois(1, lambda[nH[i, j-1]])
+    }
+  }
+
+
+  list(
+    log_lambda_1 = log(n_init),
+    beta_p = beta_p,
+    beta1 = beta1,
+    p_mu = p_mu,
+    p_unique = boot::inv.logit(p_mu),
+    phi_mu = phi_mu,
+    psi_phi = psi_phi,
+    a_phi = a,
+    b_phi = b,
+    N = N,
+    log_nu = log_nu,
+    nu = exp(log_nu),
+    log_gamma = log_gamma,
+    log_rho = log_rho,
+    phi = phi
+  )
+}
+
 
 
 
