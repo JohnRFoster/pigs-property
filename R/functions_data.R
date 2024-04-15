@@ -192,6 +192,7 @@ subset_data_for_development <- function(df, n){
     pull(agrp_prp_id)
 
   sample_filter <- function(df, props, n){
+    set.seed(789)
     dev_sample <- props[sample.int(length(props), n)]
 
     df |>
