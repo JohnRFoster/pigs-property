@@ -11,7 +11,7 @@ library(compareMCMCs)
 library(foreach)
 library(purrr)
 
-config_name <- "default"
+config_name <- "hpc_dev"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
