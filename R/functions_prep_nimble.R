@@ -17,7 +17,7 @@ create_all_primary_periods <- function(df){
   properties <- unique(pp_min_max$property)
 
   all_pp <- tibble()
-  message("Include all primary periods")
+  message("\nInclude all primary periods")
   pb <- txtProgressBar(max = length(properties), style = 1)
   for(i in seq_along(properties)){
     pid <- pp_min_max |> filter(property == properties[i])
