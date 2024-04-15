@@ -9,6 +9,7 @@ library(tidyr)
 library(readr)
 library(compareMCMCs)
 library(foreach)
+library(parallel)
 library(purrr)
 
 config_name <- "hpc_dev"
@@ -86,6 +87,7 @@ doParallel::registerDoParallel(cl)
 
 itest <- nimble_inits(constants, data)
 
+message("Benchmarking MCMCs...")
 out <- foreach(
   i = 1:length(cl),
   .inorder = FALSE
@@ -113,6 +115,7 @@ out <- foreach(
 }
 
 stopCluster(cl)
+message("  done")
 
 # MCMC efficiency for a parameter is defined as the effective sample size divided by
 # the computation time in seconds
