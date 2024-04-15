@@ -122,7 +122,7 @@ message("====== Efficiency by MCMC engine ======")
 get_byMCMC <- function(x) combineMetrics(x)$byMCMC
 map(out, get_byMCMC) |> list_rbind()
 
-message("====== Least efficient node from each MCMC engine ======")
+message("\n\n====== Least efficient node from each MCMC engine ======")
 get_byParameter <- function(x) combineMetrics(x)$byParameter
 map(out, get_byParameter) |>
   list_rbind() |>
