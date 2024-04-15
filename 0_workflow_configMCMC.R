@@ -86,7 +86,7 @@ cl <- makeCluster(length(nimbleMCMCdefs))
 doParallel::registerDoParallel(cl)
 
 itest <- nimble_inits(constants, data)
-itest <- nimble_inits_sample(init_filename, constants, data)
+itest <- nimble_inits_sample(config$file_init, constants, data)
 
 message("Benchmarking MCMCs...")
 out <- foreach(
