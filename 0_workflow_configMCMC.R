@@ -90,7 +90,7 @@ itest <- nimble_inits(constants, data)
 message("Benchmarking MCMCs...")
 out <- foreach(
   i = 1:length(cl),
-  .inorder = FALSE
+  .inorder = TRUE
 ) %dopar% {
   library(compareMCMCs)
   library(nimble)
