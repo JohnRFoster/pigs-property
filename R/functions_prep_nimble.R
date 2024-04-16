@@ -232,6 +232,7 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
   N_full_unique <- nH_p |> unique()
   N_quant_unique <- setdiff(seq(1, max(N_full_unique)), N_full_unique)
   rem <- total_take(df, all_primary_periods)
+  targets::tar_assert_true(all(rem[,1] != 0))
   X <- create_X(df)
   start_end <- create_start_end(df, all_primary_periods)
   survival_prior <- create_surv_prior(interval, data_repo)
