@@ -68,7 +68,7 @@ data_litter_size <- round(
 constants <- nimble_constants(data_final, data_litter_size, interval, data_repo)
 data <- nimble_data(data_final, data_litter_size)
 # itest <- nimble_inits(constants, data)
-itest <- nimble_inits_sample(config$file_init, constants, data)
+itest <- nimble_inits_sample(config$file_init, constants, data, buffer = 600)
 
 test_build(modelCode, constants, data, itest)
 
