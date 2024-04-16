@@ -208,16 +208,25 @@ subset_data_for_development <- function(df, n){
     new_df <- sample_filter(df, all_dev_properties, n)
     not_all_methods <- length(unique(new_df$method)) < 5
   }
-  return(new_df)
+  new_df |> arrange(agrp_prp_id, timestep)
 }
 
 condition_first_capture <- function(df){
-  df |>
+  good_events <- df |>
+    group_by(agrp_prp_id, timestep) |>
+    summarise(take = sum(take)) |>
+    ungroup() |>
     group_by(agrp_prp_id) |>
     mutate(cumulative_take = cumsum(take)) |>
-    filter(cumulative_take > 0) |>
     ungroup() |>
-    select(-cumulative_take)
+    filter(cumulative_take > 0) |>
+    mutate(event_id = paste0(agrp_prp_id, "-", timestep)) |>
+    pull(event_id)
+
+  df |>
+    mutate(event_id = paste0(agrp_prp_id, "-", timestep)) |>
+    filter(event_id %in% good_events) |>
+    arrange(agrp_prp_id, timestep)
 }
 
 create_timestep_df <- function(df){
@@ -258,10 +267,11 @@ get_data <- function(file, interval, dev, n = 50){
   }
 
   data_processed <- data_to_model |>
-    condition_first_capture() |>   # condition on first positive removal event for each property
     resolve_duplicate() |>         # resolve duplicate property areas
-    dynamic_filter() |>            # filter out bad events & properties
     take_filter() |>               # remove properties with zero pigs taken
+    dynamic_filter() |>            # filter out bad events & properties
+    condition_first_capture() |>   # condition on first positive removal event for each property
+    dynamic_filter() |>            # filter out bad events & properties
     order_interval() |>            # determine midpoints from start/end dates
     order_stochastic() |>          # randomly order events
     order_of_events() |>           # assign order number, check
