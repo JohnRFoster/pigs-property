@@ -67,6 +67,12 @@ data_litter_size <- round(
 
 constants <- nimble_constants(data_final, data_litter_size, interval, data_repo)
 data <- nimble_data(data_final, data_litter_size)
+# itest <- nimble_inits(constants, data)
+itest <- nimble_inits_sample(config$file_init, constants, data)
+
+test_build(modelCode, constants, data, itest)
+
+stop()
 
 params_check <- c(
   "beta_p",
@@ -79,14 +85,12 @@ params_check <- c(
   "p_mu"
 )
 
-monitors_add <- "N"
+monitors_add <- NULL
 
 source("R/mcmc_configs.R")
 cl <- makeCluster(length(nimbleMCMCdefs))
 doParallel::registerDoParallel(cl)
 
-itest <- nimble_inits(constants, data)
-itest <- nimble_inits_sample(config$file_init, constants, data)
 
 message("Benchmarking MCMCs...")
 out <- foreach(

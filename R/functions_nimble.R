@@ -66,3 +66,38 @@ continue_mcmc <- function(mcmc, effective_size, max_psrf){
   ))
 
 }
+
+test_build <- function(code, constants, data, inits){
+
+  message("\n\n=== Test build ===")
+
+  Rmodel <- nimbleModel(
+    code = code,
+    constants = constants,
+    data = data,
+    inits = inits
+  )
+
+  Rmodel$initializeInfo()
+
+  N <- Rmodel$N
+  nH_p <- constants$nH_p
+  n_survey <- constants$n_survey
+  y_sum <- data$y_sum
+
+  for(i in 1:n_survey){
+    N_model <- N[nH_p[i]]
+    n <- round(N_model - y_sum[i])
+    if(n <= 0){
+      print(i)
+      Rmodel$N[nH_p[i]] <- N_model + abs(n)^2
+    }
+  }
+
+  calc <- Rmodel$calculate()
+  if(is.infinite(calc) | is.nan(calc) | is.na(calc)){
+    stop(paste0("Model log probability is ", calc))
+  }
+
+  message("==================\n")
+}
