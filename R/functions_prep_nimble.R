@@ -343,7 +343,7 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 500){
   })
 }
 
-nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble){
+nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, buffer = 500){
 
   rds <- read_rds(posterior_file)
   params <- as_tibble(as.matrix(rds$params))
@@ -396,7 +396,7 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble){
 
 
   list(
-    log_lambda_1 = log(n_init),
+    log_lambda_1 = log(n_init + buffer),
     beta_p = beta_p,
     beta1 = beta1,
     p_mu = p_mu,
@@ -405,7 +405,7 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble){
     psi_phi = psi_phi,
     a_phi = a,
     b_phi = b,
-    N = N,
+    N = N + buffer,
     log_nu = log_nu,
     nu = exp(log_nu),
     log_gamma = log_gamma,
