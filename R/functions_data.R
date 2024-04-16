@@ -37,7 +37,9 @@ create_primary_periods <- function(df, interval) {
   }
   close(pb)
 
-  df |> filter(!is.na(timestep))
+  df |>
+    filter(!is.na(timestep)) |>
+    arrange(agrp_prp_id, timestep)
 
 }
 
@@ -209,6 +211,26 @@ subset_data_for_development <- function(df, n){
   return(new_df)
 }
 
+condition_first_capture <- function(df){
+  df |>
+    group_by(agrp_prp_id) |>
+    mutate(cumulative_take = cumsum(take)) |>
+    filter(cumulative_take > 0) |>
+    ungroup() |>
+    select(-cumulative_take)
+}
+
+create_timestep_df <- function(df){
+  df |>
+    select(agrp_prp_id, primary_period) |>
+    unique() |>
+    arrange(agrp_prp_id, primary_period) |>
+    group_by(agrp_prp_id) |>
+    mutate(observed_timestep = 1:n()) |> # timestep is the sequence of primary periods within a property
+    ungroup()
+}
+
+
 get_data <- function(file, interval, dev, n = 50){
   all_take <- read_csv(file, show_col_types = FALSE) |>
     mutate(cnty_name = if_else(grepl("ST ", cnty_name), gsub("ST ", "ST. ", cnty_name), cnty_name),
@@ -226,7 +248,7 @@ get_data <- function(file, interval, dev, n = 50){
     select(-wt_work_date, -hours, -cmp.hours, -cmp.days) |>
     distinct()
 
-    # create PP of length [interval]
+  # create PP of length [interval]
   data_timestep <- create_primary_periods(data_mis, interval)
 
   if(dev){
@@ -236,25 +258,20 @@ get_data <- function(file, interval, dev, n = 50){
   }
 
   data_processed <- data_to_model |>
-    resolve_duplicate() |>  # resolve duplicate property areas
-    dynamic_filter() |>     # filter out bad events & properties
-    take_filter() |>        # remove properties with zero pigs taken
-    order_interval() |>     # determine midpoints from start/end dates
-    order_stochastic() |>   # randomly order events
-    order_of_events() |>    # assign order number, check
-    county_codes()          # county codes and renaming
-
-  timestep_df <- data_processed |>
-    select(agrp_prp_id, primary_period) |>
-    unique() |>
-    arrange(agrp_prp_id, primary_period) |>
-    group_by(agrp_prp_id) |>
-    mutate(observed_timestep = 1:n()) |> # timestep is the sequence of primary periods within a property
-    ungroup()
+    condition_first_capture() |>   # condition on first positive removal event for each property
+    resolve_duplicate() |>         # resolve duplicate property areas
+    dynamic_filter() |>            # filter out bad events & properties
+    take_filter() |>               # remove properties with zero pigs taken
+    order_interval() |>            # determine midpoints from start/end dates
+    order_stochastic() |>          # randomly order events
+    order_of_events() |>           # assign order number, check
+    county_codes()                 # county codes and renaming
 
   # now we have two columns for time
   # primary_period is how [interval] sequences are aligned across the data set
   # timestep is the sequence of primary periods within a property
+  timestep_df <- create_timestep_df(data_processed)
+
   data_pp <- left_join(data_processed, timestep_df,
                        by = join_by(agrp_prp_id, primary_period))
 
