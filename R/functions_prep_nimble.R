@@ -125,6 +125,11 @@ create_start_end <- function(df_take, df_pp){
 # informed hyper parameters for beta distribution on global pig survival
 create_surv_prior <- function(interval, data_repo){
 
+  require(lubridate)
+  require(readr)
+  require(dplyr)
+  require(tidyr)
+
   data <- read_csv(file.path(data_repo, "insitu/Vital_Rate_Data.csv"),
                    show_col_types = FALSE)
 
