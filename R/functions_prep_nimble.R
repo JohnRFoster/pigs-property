@@ -406,6 +406,7 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
     a_phi = a,
     b_phi = b,
     N = N + buffer,
+    lambda = lambda + buffer,
     log_nu = log_nu,
     nu = exp(log_nu),
     log_gamma = log_gamma,
