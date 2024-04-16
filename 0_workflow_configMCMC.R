@@ -72,8 +72,6 @@ itest <- nimble_inits_sample(config$file_init, constants, data, buffer = 600)
 
 test_build(modelCode, constants, data, itest)
 
-stop()
-
 params_check <- c(
   "beta_p",
   "beta1",
