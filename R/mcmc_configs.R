@@ -18,7 +18,7 @@ nimbleMCMCdefs <- list(
     mcmcConf <- configureMCMC(model)
     mcmcConf$removeSamplers(c("phi_mu", "log_nu", "beta1"))
     mcmcConf$addSampler(target = c("beta1"), type = "RW_block",
-                        control = list(tries = 2))
+                        control = list(adaptInterval = 150))
     mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
     mcmcConf$addSampler(target = c("log_nu"), type = "slice")
     mcmcConf
@@ -28,7 +28,7 @@ nimbleMCMCdefs <- list(
     mcmcConf <- configureMCMC(model)
     mcmcConf$removeSamplers(c("phi_mu", "log_nu", "beta1"))
     mcmcConf$addSampler(target = c("beta1"), type = "RW_block",
-                        control = list(tries = 4))
+                        control = list(adaptInterval = 100))
     mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
     mcmcConf$addSampler(target = c("log_nu"), type = "slice")
     mcmcConf
@@ -38,7 +38,7 @@ nimbleMCMCdefs <- list(
     mcmcConf <- configureMCMC(model)
     mcmcConf$removeSamplers(c("phi_mu", "log_nu", "beta1"))
     mcmcConf$addSampler(target = c("beta1"), type = "RW_block",
-                        control = list(tries = 8))
+                        control = list(adaptInterval = 50))
     mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
     mcmcConf$addSampler(target = c("log_nu"), type = "slice")
     mcmcConf
