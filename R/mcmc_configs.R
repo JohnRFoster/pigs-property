@@ -35,7 +35,7 @@ nimbleMCMCdefs <- list(
     mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
     mcmcConf$addSampler(target = c("log_nu"), type = "slice")
     mcmcConf
-  }
+  },
 
   slice4 = function(model){
     mcmcConf <- configureMCMC(model)
