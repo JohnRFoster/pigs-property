@@ -128,7 +128,7 @@ str(out)
 
 message("\n\n====== Efficiency by MCMC engine ======")
 get_byMCMC <- function(x) combineMetrics(x)$byMCMC
-map(out, get_byMCMC) |> list_rbind() |> arrange(min_efficiency)
+map(out, get_byMCMC) |> list_rbind() |> arrange(desc(min_efficiency)) |> as.matrix()
 
 message("\n\n====== Least efficient node from each MCMC engine ======")
 get_byParameter <- function(x) combineMetrics(x)$byParameter
@@ -136,6 +136,6 @@ map(out, get_byParameter) |>
   list_rbind() |>
   as_tibble() |>
   group_by(MCMC) |>
-  filter(efficiency == min(efficiency))
+  filter(efficiency == min(efficiency)) |> as.matrix()
 
 
