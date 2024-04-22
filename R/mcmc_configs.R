@@ -5,47 +5,7 @@ nimbleMCMCdefs <- list(
     mcmcConf
   },
 
-  beta1_RWblock = function(model){
-    mcmcConf <- configureMCMC(model)
-    mcmcConf$removeSamplers(c("beta1"))
-    mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
-    mcmcConf
-  },
-
-  slice1 = function(model){
-    mcmcConf <- configureMCMC(model)
-    mcmcConf$removeSamplers(c("psi_phi", "beta1"))
-    mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
-    mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
-    mcmcConf
-  },
-
-  slice2 = function(model){
-    mcmcConf <- configureMCMC(model)
-    mcmcConf$removeSamplers(c("log_nu", "beta1"))
-    mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
-    mcmcConf$addSampler(target = c("log_nu"), type = "slice")
-    mcmcConf
-  },
-
-  slice3 = function(model){
-    mcmcConf <- configureMCMC(model)
-    mcmcConf$removeSamplers(c("psi_phi", "log_nu", "beta1"))
-    mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
-    mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
-    mcmcConf$addSampler(target = c("log_nu"), type = "slice")
-    mcmcConf
-  },
-
-  slice4 = function(model){
-    mcmcConf <- configureMCMC(model)
-    mcmcConf$removeSamplers(c("phi_mu", "beta1"))
-    mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
-    mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
-    mcmcConf
-  },
-
-  slice5 = function(model){
+  slice5.0 = function(model){
     mcmcConf <- configureMCMC(model)
     mcmcConf$removeSamplers(c("phi_mu", "log_nu", "beta1"))
     mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
@@ -54,15 +14,84 @@ nimbleMCMCdefs <- list(
     mcmcConf
   },
 
-  slice6 = function(model){
+  slice5.1 = function(model){
     mcmcConf <- configureMCMC(model)
-    mcmcConf$removeSamplers(c("phi_mu", "psi_phi", "log_nu", "beta1"))
-    mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
+    mcmcConf$removeSamplers(c("phi_mu", "log_nu", "beta1"))
+    mcmcConf$addSampler(target = c("beta1"), type = "RW_block",
+                        control = list(tries = 2))
     mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
-    mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
+    mcmcConf$addSampler(target = c("log_nu"), type = "slice")
+    mcmcConf
+  },
+
+  slice5.2 = function(model){
+    mcmcConf <- configureMCMC(model)
+    mcmcConf$removeSamplers(c("phi_mu", "log_nu", "beta1"))
+    mcmcConf$addSampler(target = c("beta1"), type = "RW_block",
+                        control = list(tries = 4))
+    mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
+    mcmcConf$addSampler(target = c("log_nu"), type = "slice")
+    mcmcConf
+  },
+
+  slice5.3 = function(model){
+    mcmcConf <- configureMCMC(model)
+    mcmcConf$removeSamplers(c("phi_mu", "log_nu", "beta1"))
+    mcmcConf$addSampler(target = c("beta1"), type = "RW_block",
+                        control = list(tries = 8))
+    mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
     mcmcConf$addSampler(target = c("log_nu"), type = "slice")
     mcmcConf
   }
+
+  # beta1_RWblock = function(model){
+  #   mcmcConf <- configureMCMC(model)
+  #   mcmcConf$removeSamplers(c("beta1"))
+  #   mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
+  #   mcmcConf
+  # },
+  #
+  # slice1 = function(model){
+  #   mcmcConf <- configureMCMC(model)
+  #   mcmcConf$removeSamplers(c("psi_phi", "beta1"))
+  #   mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
+  #   mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
+  #   mcmcConf
+  # },
+  #
+  # slice2 = function(model){
+  #   mcmcConf <- configureMCMC(model)
+  #   mcmcConf$removeSamplers(c("log_nu", "beta1"))
+  #   mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
+  #   mcmcConf$addSampler(target = c("log_nu"), type = "slice")
+  #   mcmcConf
+  # },
+  #
+  # slice3 = function(model){
+  #   mcmcConf <- configureMCMC(model)
+  #   mcmcConf$removeSamplers(c("psi_phi", "log_nu", "beta1"))
+  #   mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
+  #   mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
+  #   mcmcConf$addSampler(target = c("log_nu"), type = "slice")
+  #   mcmcConf
+  # },
+  #
+  # slice4 = function(model){
+  #   mcmcConf <- configureMCMC(model)
+  #   mcmcConf$removeSamplers(c("phi_mu", "beta1"))
+  #   mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
+  #   mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
+  #   mcmcConf
+  # },
+  # slice6 = function(model){
+  #   mcmcConf <- configureMCMC(model)
+  #   mcmcConf$removeSamplers(c("phi_mu", "psi_phi", "log_nu", "beta1"))
+  #   mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
+  #   mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
+  #   mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
+  #   mcmcConf$addSampler(target = c("log_nu"), type = "slice")
+  #   mcmcConf
+  # }
 
   # beta1_AFslice = function(model){
   #   mcmcConf <- configureMCMC(model)
