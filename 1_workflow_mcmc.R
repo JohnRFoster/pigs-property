@@ -73,7 +73,7 @@ message(n_chains, " chains")
 inits <- list()
 for(i in seq_len(n_chains)){
   set.seed(i)
-  inits[[i]] <- nimble_inits(constants, data)
+  inits[[i]] <- nimble_inits_sample(config$file_init, constants, data, buffer = 600)
 }
 
 test_build(modelCode, constants, data, inits[[1]])
@@ -89,7 +89,23 @@ params_check <- c(
   "p_mu"
 )
 
-monitors_add <- "N"
+monitors_add <- NULL
+# monitors_add <- "N"
+
+mcmcConf$removeSamplers(c("phi_mu", "psi_phi", "log_nu", "beta1"))
+mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
+mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
+mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
+mcmcConf$addSampler(target = c("log_nu"), type = "slice")
+
+custom_samplers <- NULL
+# custom_samplers <- tribble(
+#   ~"node",   ~"type",
+#   "phi_mu",  "slice",
+#   "psi_phi", "slice",
+#   "log_nu",  "slice",
+#   "beta1",   "RW_block"
+# )
 
 # ===================================================
 # Run Nimble in parallel ----
@@ -98,7 +114,8 @@ monitors_add <- "N"
 cl <- makeCluster(n_chains)
 
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
-np_dir <- paste0("dev", config$np)
+sampler_dir <- if_else(is.null(custom_samplers), "default", "custom")
+np_dir <- paste0("dev", config$np, sampler_dir)
 dest <- file.path(out_dir, np_dir)
 
 mcmc_parallel(
