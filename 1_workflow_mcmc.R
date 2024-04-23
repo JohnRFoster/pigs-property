@@ -89,8 +89,7 @@ params_check <- c(
   "p_mu"
 )
 
-monitors_add <- NULL
-# monitors_add <- "N"
+monitors_add <- "N"
 
 mcmcConf$removeSamplers(c("phi_mu", "psi_phi", "log_nu", "beta1"))
 mcmcConf$addSampler(target = c("beta1"), type = "RW_block")
@@ -98,14 +97,14 @@ mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
 mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
 mcmcConf$addSampler(target = c("log_nu"), type = "slice")
 
-custom_samplers <- NULL
-# custom_samplers <- tribble(
-#   ~"node",   ~"type",
-#   "phi_mu",  "slice",
-#   "psi_phi", "slice",
-#   "log_nu",  "slice",
-#   "beta1",   "RW_block"
-# )
+# custom_samplers <- NULL
+custom_samplers <- tribble(
+  ~"node",   ~"type",
+  "phi_mu",  "slice",
+  "psi_phi", "slice",
+  "log_nu",  "slice",
+  "beta1",   "RW_block"
+)
 
 # ===================================================
 # Run Nimble in parallel ----
