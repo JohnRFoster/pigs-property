@@ -79,15 +79,6 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
       }
     }
 
-    n_method <- model_constants$n_method
-    m_p <- model_constants$m_p
-    for(i in 1:n_method){
-      node <- paste0("beta_p[", i, ", ", 1:m_p, "]")
-      node <- c(paste0("beta1[", i, "]"), node)
-      mcmcConf$removeSampler(node)
-      mcmcConf$addSampler(node, "AF_slice")
-    }
-
     if(!is.null(monitors_add)){
       mcmcConf$addMonitors(monitors_add)
     }
