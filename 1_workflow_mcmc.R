@@ -91,14 +91,14 @@ params_check <- c(
 
 monitors_add <- "N"
 
-custom_samplers <- NULL
-# custom_samplers <- tribble(
-#   ~"node",   ~"type",
-#   "phi_mu",  "slice",
-#   "psi_phi", "slice",
-#   "log_nu",  "slice",
-#   "beta1",   "RW_block"
-# )
+# custom_samplers <- NULL
+custom_samplers <- tribble(
+  ~"node",   ~"type",
+  "phi_mu",  "slice",
+  "psi_phi", "slice",
+  "log_nu",  "slice",
+  "beta1",   "RW_block"
+)
 
 # ===================================================
 # Run Nimble in parallel ----
