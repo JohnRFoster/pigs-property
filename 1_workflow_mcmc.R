@@ -107,8 +107,7 @@ custom_samplers <- NULL
 cl <- makeCluster(n_chains)
 
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
-sampler_dir <- if_else(is.null(custom_samplers), "default", "custom")
-np_dir <- paste0("dev", config$np, sampler_dir)
+np_dir <- paste0("dev", config$np, "_", config$mcmc_config)
 dest <- file.path(out_dir, np_dir)
 
 mcmc_parallel(
