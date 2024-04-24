@@ -129,7 +129,7 @@ plots <- tibble(
 )
 
 message("Creating traceplots...")
-options(bitmapType = 'Xlib')
+# options(bitmapType = 'Xlib')
 pb <- txtProgressBar(min = 1, max = max(plots$idx), style = 1)
 for(i in seq_along(unique(plots$idx))){
   n2p <- plots |>
