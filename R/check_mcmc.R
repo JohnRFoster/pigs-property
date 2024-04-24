@@ -80,7 +80,7 @@ posterior_samples <- posterior |>
   mutate(np = config$np)
 
 # create dir for posterior samples and traceplots
-np_dir <- paste0("dev", config$np, "combined")
+np_dir <- paste0("dev", config$np, config$mcmc_config, "combined")
 dest <- file.path(out_dir, np_dir)
 if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
