@@ -3,7 +3,7 @@ default:
   dev: TRUE
   np: 500
   n_iter: 1000
-  mcmc_config: "adaptiveRW[100]"
+  mcmc_config: "adaptiveRW[100]adaptExponent[0.6]"
   data_repo: "C:/Users/John.Foster/OneDrive - USDA/Desktop/fosteR/pigs-statistical/data"
   file_mis: "insitu/MIS.Effort.Take.All.Methods.Daily.Events.2021-03-25.csv"
   file_land: 'covariates/FINAL.Process.Model.Observation.Covariates.12Jan2018.csv'

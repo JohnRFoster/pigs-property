@@ -82,16 +82,16 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
         "phi"
         )
       )
-    mcmcConf$addSampler(target = "log_rho", type = "RW", control = list(adaptInterval = 100))
-    mcmcConf$addSampler(target = "p_mu", type = "RW", control = list(adaptInterval = 100))
-    mcmcConf$addSampler(target = "log_gamma", type = "RW", control = list(adaptInterval = 100))
-    mcmcConf$addSampler(target = "beta1", type = "RW", control = list(adaptInterval = 100))
-    mcmcConf$addSampler(target = "beta_p", type = "RW", control = list(adaptInterval = 100))
-    mcmcConf$addSampler(target = "phi_mu", type = "RW", control = list(adaptInterval = 100))
-    mcmcConf$addSampler(target = "psi_phi", type = "RW", control = list(adaptInterval = 100))
-    mcmcConf$addSampler(target = "log_nu", type = "RW", control = list(adaptInterval = 100))
-    mcmcConf$addSampler(target = "log_lambda_1", type = "RW", control = list(adaptInterval = 100))
-    mcmcConf$addSampler(target = "phi", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "log_rho", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    mcmcConf$addSampler(target = "p_mu", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    mcmcConf$addSampler(target = "log_gamma", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    mcmcConf$addSampler(target = "beta1", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    mcmcConf$addSampler(target = "beta_p", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    mcmcConf$addSampler(target = "phi_mu", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    mcmcConf$addSampler(target = "psi_phi", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    mcmcConf$addSampler(target = "log_nu", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    mcmcConf$addSampler(target = "log_lambda_1", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    mcmcConf$addSampler(target = "phi", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
 
 
     # if specified, change nodes to specified parameters
