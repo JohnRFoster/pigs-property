@@ -138,7 +138,7 @@ for(i in seq_along(unique(plots$idx))){
 
   gg <- trace_plot(posterior, n2p)
 
-  filename <- file.path(dest, paste0("mcmcTimeseries_", sprintf("%03d", i), ".jpeg"))
+  filename <- file.path(dest, paste0("mcmcTimeseries_", sprintf("%03d", i), ".pdf"))
   ggsave(filename, gg)
 
   setTxtProgressBar(pb, i)
