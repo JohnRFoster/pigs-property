@@ -119,11 +119,13 @@ trace_plot <- function(post, nodes_2_plot, thin = 5000){
 }
 
 nodes <- setdiff(colnames(posterior), "chain")
+n_plots_per_page <- 4   # want to put 4 nodes on a single plot
+idx <- rep(seq(1, ceiling(length(nodes) / n_plots_per_page), by = 1),
+           each = n_plots_per_page)[1:length(nodes)]
 
-# want to put 4 nodes on a single plot
 plots <- tibble(
   nodes = nodes,
-  idx = rep(seq(1, ceiling(length(nodes)/4), by = 1), each = 4)[1:length(nodes)]
+  idx = idx
 )
 
 message("Creating traceplots...")
