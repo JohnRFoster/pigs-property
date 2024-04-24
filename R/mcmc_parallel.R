@@ -68,13 +68,30 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     mcmcConf <- configureMCMC(Rmodel,
                               useConjugacy = TRUE)
 
-    mcmcConf$removeSamplers(c("phi_mu", "psi_phi", "log_nu", "beta1"))
-    mcmcConf$addSampler(target = c("beta1"), type = "RW_block",
-                        control = list(adaptInterval = 150,
-                                       adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = c("phi_mu"), type = "slice")
-    mcmcConf$addSampler(target = c("psi_phi"), type = "slice")
-    mcmcConf$addSampler(target = c("log_nu"), type = "slice")
+    mcmcConf$removeSamplers(
+      c(
+        "log_rho",
+        "p_mu",
+        "log_gamma",
+        "beta1",
+        "beta_p",
+        "phi_mu",
+        "psi_phi",
+        "log_nu",
+        "log_lambda_1",
+        "phi"
+        )
+      )
+    mcmcConf$addSampler(target = "log_rho", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "p_mu", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "log_gamma", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "beta1", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "beta_p", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "phi_mu", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "psi_phi", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "log_nu", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "log_lambda_1", type = "RW", control = list(adaptInterval = 100))
+    mcmcConf$addSampler(target = "phi", type = "RW", control = list(adaptInterval = 100))
 
 
     # if specified, change nodes to specified parameters
