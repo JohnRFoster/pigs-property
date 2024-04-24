@@ -129,8 +129,7 @@ plots <- tibble(
 )
 
 message("Creating traceplots...")
-Sys.setenv("DISPLAY"=":0.0")
-
+options(bitmapType = 'cairo')
 pb <- txtProgressBar(min = 1, max = max(plots$idx), style = 1)
 for(i in seq_along(unique(plots$idx))){
   n2p <- plots |>
