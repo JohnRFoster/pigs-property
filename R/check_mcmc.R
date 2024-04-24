@@ -129,7 +129,6 @@ plots <- tibble(
 )
 
 message("Creating traceplots...")
-options(bitmapType = 'Xlib')
 pb <- txtProgressBar(min = 1, max = max(plots$idx), style = 1)
 for(i in seq_along(unique(plots$idx))){
   n2p <- plots |>
@@ -138,7 +137,7 @@ for(i in seq_along(unique(plots$idx))){
 
   gg <- trace_plot(posterior, n2p)
 
-  filename <- file.path(dest, paste0("mcmcTimeseries_", sprintf("%03d", i), ".jpeg"))
+  filename <- file.path(dest, paste0("mcmcTimeseries_", sprintf("%03d", i), ".png"))
   ggsave(filename, gg)
 
   setTxtProgressBar(pb, i)
