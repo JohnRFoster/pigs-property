@@ -70,7 +70,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
     control_rw <- list(
       adaptInterval = 100,
-      adaptFactorExponent = 0.8
+      adaptFactorExponent = 0.6
     )
 
     mcmcConf$removeSamplers("log_rho")
