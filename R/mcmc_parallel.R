@@ -74,12 +74,10 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
         "p_mu",
         "log_gamma",
         "beta1",
-        "beta_p",
+        # "beta_p",
         "phi_mu",
         "psi_phi",
-        "log_nu",
-        "log_lambda_1",
-        "phi"
+        "log_nu"
         )
       )
     mcmcConf$addSampler(target = "log_rho[1]", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
@@ -94,7 +92,6 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     mcmcConf$addSampler(target = "phi_mu", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
     mcmcConf$addSampler(target = "psi_phi", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
     mcmcConf$addSampler(target = "log_nu", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "phi", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
 
 
     # if specified, change nodes to specified parameters
