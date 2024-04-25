@@ -68,31 +68,88 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     mcmcConf <- configureMCMC(Rmodel,
                               useConjugacy = TRUE)
 
-    mcmcConf$removeSamplers(
-      c(
-        "log_rho",
-        "p_mu",
-        "log_gamma",
-        "beta1",
-        # "beta_p",
-        "phi_mu",
-        "psi_phi",
-        "log_nu"
-        )
-      )
-    mcmcConf$addSampler(target = "log_rho[1]", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "log_rho[2]", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "log_rho[3]", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "log_rho[4]", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "log_rho[5]", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "p_mu", type = "RW_block", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "log_gamma[1]", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "log_gamma[2]", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "beta1", type = "RW_block", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "phi_mu", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "psi_phi", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
-    mcmcConf$addSampler(target = "log_nu", type = "RW", control = list(adaptInterval = 100, adaptFactorExponent = 0.6))
+    control_rw <- list(
+      adaptInterval = 100,
+      adaptFactorExponent = 0.8
+    )
 
+    mcmcConf$removeSamplers("log_rho")
+    mcmcConf$addSampler(
+      target = "log_rho[1]",
+      type = "RW",
+      control = control_rw
+    )
+
+    mcmcConf$addSampler(
+      target = "log_rho[2]",
+      type = "RW",
+      control = control_rw
+    )
+
+    mcmcConf$addSampler(
+      target = "log_rho[3]",
+      type = "RW",
+      control = control_rw
+    )
+
+    mcmcConf$addSampler(
+      target = "log_rho[4]",
+      type = "RW",
+      control = control_rw
+    )
+
+    mcmcConf$addSampler(
+      target = "log_rho[5]",
+      type = "RW",
+      control = control_rw
+    )
+
+    mcmcConf$removeSamplers("p_mu")
+    mcmcConf$addSampler(
+      target = "p_mu",
+      type = "RW_block",
+      control = control_rw
+    )
+
+    mcmcConf$removeSamplers("log_gamma")
+    mcmcConf$addSampler(
+      target = "log_gamma[1]",
+      type = "RW",
+      control = control_rw
+    )
+    mcmcConf$addSampler(
+      target = "log_gamma[2]",
+      type = "RW",
+      control = control_rw
+    )
+
+    mcmcConf$removeSamplers("beta1")
+    mcmcConf$addSampler(
+      target = "beta1",
+      type = "RW_block",
+      control = control_rw
+    )
+
+    mcmcConf$removeSamplers("phi_mu")
+    mcmcConf$addSampler(
+      target = "phi_mu",
+      type = "RW",
+      control = control_rw
+    )
+
+    mcmcConf$removeSamplers("psi_phi")
+    mcmcConf$addSampler(
+      target = "psi_phi",
+      type = "RW",
+      control = control_rw
+    )
+
+    mcmcConf$removeSamplers("log_nu")
+    mcmcConf$addSampler(
+      target = "log_nu",
+      type = "RW",
+      control = control_rw
+    )
 
     # if specified, change nodes to specified parameters
     if(!is.null(custom_samplers)){
