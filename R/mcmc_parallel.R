@@ -147,8 +147,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     mcmcConf$removeSamplers("log_nu")
     mcmcConf$addSampler(
       target = "log_nu",
-      type = "RW",
-      control = control_rw
+      type = "slice"
     )
 
     # if specified, change nodes to specified parameters
