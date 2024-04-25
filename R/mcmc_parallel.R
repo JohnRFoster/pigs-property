@@ -130,18 +130,11 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
       control = control_rw
     )
 
-    mcmcConf$removeSamplers("phi_mu")
+    mcmcConf$removeSamplers(c("phi_mu", "psi_phi"))
     mcmcConf$addSampler(
-      target = "phi_mu",
-      type = "RW",
-      control = control_rw
-    )
-
-    mcmcConf$removeSamplers("psi_phi")
-    mcmcConf$addSampler(
-      target = "psi_phi",
-      type = "RW",
-      control = control_rw
+      target = c("phi_mu", "psi_phi"),
+      type = "AF_slice",
+      control = list(sliceAdaptFactorInterval = 100)
     )
 
     mcmcConf$removeSamplers("log_nu")
