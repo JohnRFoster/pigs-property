@@ -104,11 +104,13 @@ custom_samplers <- NULL
 # Run Nimble in parallel ----
 # ===================================================
 
-cl <- makeCluster(n_chains)
 
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
 np_dir <- paste0("dev", config$np, "_", config$mcmc_config)
 dest <- file.path(out_dir, np_dir)
+
+message("Begin Parallel sampling and make cluster")
+cl <- makeCluster(n_chains)
 
 mcmc_parallel(
   cl = cl,
