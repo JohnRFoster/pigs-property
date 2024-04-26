@@ -183,32 +183,60 @@ get_fips <- function(file = "data/fips/national_county.txt"){
                    comment = '#')
 }
 
-subset_data_for_development <- function(df, n){
-  all_dev_properties <- df |>
+subset_data_for_development <- function(df){
+  less_than_50_pp <- df |>
     filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS")) |>
     select(agrp_prp_id, timestep) |>
     distinct() |>
     group_by(agrp_prp_id) |>
-    count() |>
-    filter(n >= 5) |>
+    filter(timestep == min(timestep) |
+             timestep == max(timestep)) |>
+    mutate(delta = c(0, diff(timestep))) |>
+    ungroup() |>
+    filter(delta != 0,
+           delta <= 50) |>
     pull(agrp_prp_id)
 
-  sample_filter <- function(df, props, n){
-    set.seed(789)
-    dev_sample <- props[sample.int(length(props), n)]
+  good_ts <- df |>
+    filter(agrp_prp_id %in% less_than_50_pp) |>
+    select(agrp_prp_id, timestep) |>
+    distinct() |>
+    group_by(agrp_prp_id) |>
+    count() |>
+    filter(n >= 20) |>
+    pull(agrp_prp_id)
 
-    df |>
-      filter(agrp_prp_id %in% dev_sample)
-  }
+  not_texas <- df |>
+    filter(agrp_prp_id %in% good_ts,
+           st_name != "TEXAS") |>
+    pull(agrp_prp_id) |>
+    unique()
 
-  new_df <- sample_filter(df, all_dev_properties, n)
-  not_all_methods <- length(unique(new_df$method)) < 5
+  texas <- df |>
+    filter(agrp_prp_id %in% good_ts,
+           st_name == "TEXAS") |>
+    select(agrp_prp_id, timestep) |>
+    distinct() |>
+    group_by(agrp_prp_id) |>
+    count() |>
+    filter(n >= 40) |>
+    pull(agrp_prp_id)
 
-  while(not_all_methods){
-    new_df <- sample_filter(df, all_dev_properties, n)
-    not_all_methods <- length(unique(new_df$method)) < 5
-  }
-  new_df |> arrange(agrp_prp_id, timestep)
+  new_data <- df |>
+    filter(agrp_prp_id %in% c(not_texas, texas))
+
+  message("n properties in each state")
+  new_data |>
+    select(agrp_prp_id, st_name) |>
+    distinct() |>
+    pull(st_name) |>
+    table() |>
+    print()
+
+  message("n times each method used")
+  print(table(new_data$method))
+
+  return(new_data)
 }
 
 condition_first_capture <- function(df){
@@ -236,11 +264,12 @@ create_timestep_df <- function(df){
     arrange(agrp_prp_id, primary_period) |>
     group_by(agrp_prp_id) |>
     mutate(observed_timestep = 1:n()) |> # timestep is the sequence of primary periods within a property
-    ungroup()
+    ungroup() |>
+    mutate(primary_period = primary_period - min(primary_period) + 1)
 }
 
 
-get_data <- function(file, interval, dev, n = 50){
+get_data <- function(file, interval, dev){
   all_take <- read_csv(file, show_col_types = FALSE) |>
     mutate(cnty_name = if_else(grepl("ST ", cnty_name), gsub("ST ", "ST. ", cnty_name), cnty_name),
            cnty_name = if_else(grepl("KERN", cnty_name), "KERN", cnty_name))
@@ -261,7 +290,7 @@ get_data <- function(file, interval, dev, n = 50){
   data_timestep <- create_primary_periods(data_mis, interval)
 
   if(dev){
-    data_to_model <- subset_data_for_development(data_timestep, n)
+    data_to_model <- subset_data_for_development(data_timestep)
   } else {
     data_to_model <- data_timestep
   }
@@ -275,7 +304,8 @@ get_data <- function(file, interval, dev, n = 50){
     order_interval() |>            # determine midpoints from start/end dates
     order_stochastic() |>          # randomly order events
     order_of_events() |>           # assign order number, check
-    county_codes()                 # county codes and renaming
+    county_codes()  |>             # county codes and renaming
+    mutate(primary_period = primary_period - min(primary_period) + 1)
 
   # now we have two columns for time
   # primary_period is how [interval] sequences are aligned across the data set
