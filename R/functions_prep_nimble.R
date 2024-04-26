@@ -237,6 +237,16 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
   start_end <- create_start_end(df, all_primary_periods)
   survival_prior <- create_surv_prior(interval, data_repo)
 
+  my_methods_fac <- tibble(
+    method = c("TRAPS", "SNARE", "FIREARMS", "FIXED WING", "HELICOPTER"),
+    method_order = c("1_TRAPS", "2_SNARE", "3_FIREARMS", "4_FIXED WING", "5_HELICOPTER")
+  )
+
+  method_chr <- left_join(df, my_methods_fac) |> pull(method_order)
+  trap_snare_idx <- which(method_chr %in% c("2_SNARE", "1_TRAPS"))
+  shooting_idx <- which(!method_chr %in% c("2_SNARE", "1_TRAPS"))
+  method_num <- as.numeric(as.factor(method_chr))
+
   list(
     n_survey = nrow(df),
     n_ls = length(data_ls),
@@ -245,6 +255,8 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
     n_not_first_survey = length(which(df$order != 1)),
     n_method = length(unique(df$method)),
     n_time_prop = n_time_prop,
+    n_trap_snare = length(trap_snare_idx),
+    n_shooting = length(shooting_idx),
     nH = nH,
     nH_p = nH_p,
     N_full_unique = N_full_unique,
@@ -253,10 +265,12 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
     log_pi = log(pi),
     first_survey = which(df$order == 1),
     not_first_survey = which(df$order != 1),
+    trap_snare_idx = trap_snare_idx,
+    shooting_idx = shooting_idx,
     m_p = ncol(X),
     start = start_end$start,
     end = start_end$end,
-    method = as.numeric(as.factor(df$method)),
+    method = method_num,
     pp_len = interval * 7,
     phi_mu_a = survival_prior$alpha,
     phi_mu_b = survival_prior$beta
