@@ -19,7 +19,7 @@ config_name <- "hpc_dev"
 config <- config::get(config = config_name)
 
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
-np_dir <- paste0("dev", config$np, config$mcmc_config)
+np_dir <- paste0("dev", config$np, "_", config$mcmc_config)
 
 # where mcmc chunks are stored
 dest <- file.path(out_dir, np_dir)
