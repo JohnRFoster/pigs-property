@@ -206,7 +206,7 @@ subset_data_for_development <- function(df){
     distinct() |>
     group_by(agrp_prp_id) |>
     count() |>
-    filter(n >= 18) |>
+    filter(n >= 15) |>
     pull(agrp_prp_id)
 
   not_texas <- df |>
@@ -227,8 +227,6 @@ subset_data_for_development <- function(df){
 
   new_data <- df |>
     filter(agrp_prp_id %in% c(not_texas, texas))
-
-  message("Total properties in development data: ", length(unique(new_data$agrp_prp_id)))
 
   message("n properties in each state")
   new_data |>
@@ -320,6 +318,7 @@ get_data <- function(file, interval, dev){
   data_pp <- left_join(data_processed, timestep_df,
                        by = join_by(agrp_prp_id, primary_period))
 
+  message("\nTotal properties in development data: ", length(unique(data_pp$agrp_prp_id)))
   return(data_pp)
 
 }
