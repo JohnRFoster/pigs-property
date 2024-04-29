@@ -184,6 +184,8 @@ get_fips <- function(file = "data/fips/national_county.txt"){
 }
 
 subset_data_for_development <- function(df){
+
+  # get properties that have a total time series length of 50 primary periods or less
   less_than_50_pp <- df |>
     filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS")) |>
     select(agrp_prp_id, timestep) |>
@@ -197,13 +199,14 @@ subset_data_for_development <- function(df){
            delta <= 50) |>
     pull(agrp_prp_id)
 
+  # given the properties identified above, subset to those that have at least n observed primary periods
   good_ts <- df |>
     filter(agrp_prp_id %in% less_than_50_pp) |>
     select(agrp_prp_id, timestep) |>
     distinct() |>
     group_by(agrp_prp_id) |>
     count() |>
-    filter(n >= 20) |>
+    filter(n >= 18) |>
     pull(agrp_prp_id)
 
   not_texas <- df |>
@@ -224,6 +227,8 @@ subset_data_for_development <- function(df){
 
   new_data <- df |>
     filter(agrp_prp_id %in% c(not_texas, texas))
+
+  message("Total properties in development data: ", length(unique(new_data$agrp_prp_id)))
 
   message("n properties in each state")
   new_data |>
