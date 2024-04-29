@@ -29,7 +29,7 @@ file <- file.path(data_repo, config$file_mis)
 interval <- config$interval
 dev <- config$dev
 n <- config$np
-data_mis <- get_data(file, interval, dev, n)
+data_mis <- get_data(file, interval, dev)
 
 ## observation covariates ----
 file <- file.path(data_repo, config$file_land)
@@ -73,7 +73,7 @@ message(n_chains, " chains")
 inits <- list()
 for(i in seq_len(n_chains)){
   set.seed(i)
-  inits[[i]] <- nimble_inits_sample(config$file_init, constants, data, buffer = 600)
+  inits[[i]] <- nimble_inits(constants, data, buffer = 600)
 }
 
 test_build(modelCode, constants, data, inits[[1]])
