@@ -73,68 +73,11 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
       adaptFactorExponent = 0.6
     )
 
-    mcmcConf$removeSamplers("log_rho")
-    mcmcConf$addSampler(
-      target = "log_rho[1]",
-      type = "RW",
-      control = control_rw
-    )
-
-    mcmcConf$addSampler(
-      target = "log_rho[2]",
-      type = "RW",
-      control = control_rw
-    )
-
-    mcmcConf$addSampler(
-      target = "log_rho[3]",
-      type = "RW",
-      control = control_rw
-    )
-
-    mcmcConf$addSampler(
-      target = "log_rho[4]",
-      type = "RW",
-      control = control_rw
-    )
-
-    mcmcConf$addSampler(
-      target = "log_rho[5]",
-      type = "RW",
-      control = control_rw
-    )
-
-    mcmcConf$removeSamplers("p_mu")
-    mcmcConf$addSampler(
-      target = "p_mu",
-      type = "RW_block",
-      control = control_rw
-    )
-
-    mcmcConf$removeSamplers("log_gamma")
-    mcmcConf$addSampler(
-      target = "log_gamma[1]",
-      type = "RW",
-      control = control_rw
-    )
-    mcmcConf$addSampler(
-      target = "log_gamma[2]",
-      type = "RW",
-      control = control_rw
-    )
-
     mcmcConf$removeSamplers("beta1")
     mcmcConf$addSampler(
       target = "beta1",
       type = "RW_block",
       control = control_rw
-    )
-
-    mcmcConf$removeSamplers(c("phi_mu", "psi_phi"))
-    mcmcConf$addSampler(
-      target = c("phi_mu", "psi_phi"),
-      type = "AF_slice",
-      control = list(sliceAdaptFactorInterval = 100)
     )
 
     mcmcConf$removeSamplers("log_nu")
