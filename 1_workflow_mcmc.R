@@ -72,7 +72,7 @@ message(n_chains, " chains")
 inits <- list()
 for(i in seq_len(n_chains)){
   set.seed(i)
-  inits[[i]] <- nimble_inits(constants, data, buffer = 600)
+  inits[[i]] <- nimble_inits_sample(config$file_init, constants, data)
 }
 
 test_build(modelCode, constants, data, inits[[1]])
@@ -108,6 +108,8 @@ out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
 np <- constants$n_property
 np_dir <- file.path("dev", paste0(np, "_properties"))
 dest <- file.path(out_dir, np_dir)
+if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+write_rds(data_final, file.path(dest, "modelData.rds"))
 
 message("Begin Parallel sampling and make cluster")
 cl <- makeCluster(n_chains)
