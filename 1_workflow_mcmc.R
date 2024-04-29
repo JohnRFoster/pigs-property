@@ -106,7 +106,8 @@ custom_samplers <- NULL
 
 
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
-np_dir <- paste0("dev", config$np, "_", config$mcmc_config)
+np <- constants$n_property
+np_dir <- file.path("dev", paste0(np, "_properties"))
 dest <- file.path(out_dir, np_dir)
 
 message("Begin Parallel sampling and make cluster")
