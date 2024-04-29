@@ -10,5 +10,5 @@ default:
 
 hpc_dev:
   data_repo: "/lustrefs/ceah/feral-swine/data"
-  file_init: "/lustrefs/ceah/feral-swine/property-fits/dev300/0027/paramSamples.rds"
+  file_init: "/lustrefs/ceah/feral-swine/property-fits/dev/22_properties/0007/paramSamples.rds"
   n_iter: 50000
