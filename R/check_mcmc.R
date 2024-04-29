@@ -25,6 +25,7 @@ np_dir <- file.path("dev", paste0(np, "_properties"))
 # where mcmc chunks are stored
 dest <- file.path(out_dir, np_dir)
 mcmc_dirs <- list.files(dest)
+mcmc_dirs <- setdiff(mcmc_dirs, "modelData.rds")
 param_file_name <- "paramSamples.rds"
 
 # use the first mcmc chunk to initialize storage for each chain
