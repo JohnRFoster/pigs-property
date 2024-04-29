@@ -378,7 +378,7 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
   beta1 <- get_vec(init, "beta1")
   p_mu <- get_vec(init, "p_mu")
   phi_mu <- get_vec(init, "phi_mu")
-  psi_phi <- get_vec(init, "psi_phi")
+  psi_phi <- get_vec(init, "psi_phi") + 2
   log_nu <- get_vec(init, "log_nu")
   log_gamma <- get_vec(init, "log_gamma")
   log_rho <- get_vec(init, "log_rho")
@@ -421,12 +421,14 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
     a_phi = a,
     b_phi = b,
     N = N + buffer,
-    lambda = lambda + buffer,
+    # lambda = lambda + buffer,
     log_nu = log_nu,
     nu = exp(log_nu),
     log_gamma = log_gamma,
     log_rho = log_rho,
-    phi = phi
+    phi = phi,
+    zeta = zeta,
+    log_zeta = log(zeta)
   )
 }
 
