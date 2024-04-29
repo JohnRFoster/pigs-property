@@ -72,7 +72,7 @@ message(n_chains, " chains")
 inits <- list()
 for(i in seq_len(n_chains)){
   set.seed(i)
-  inits[[i]] <- nimble_inits_sample(config$file_init, constants, data, buffer = 600)
+  inits[[i]] <- nimble_inits(constants, data, buffer = 600)
 }
 
 test_build(modelCode, constants, data, inits[[1]])
