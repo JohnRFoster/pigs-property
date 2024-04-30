@@ -24,37 +24,9 @@ np_dir <- file.path("dev", paste0(np, "_properties"))
 
 # where mcmc chunks are stored
 dest <- file.path(out_dir, np_dir)
-mcmc_dirs <- list.files(dest)
-mcmc_dirs <- setdiff(mcmc_dirs, "modelData.rds")
-param_file_name <- "paramSamples.rds"
 
-# use the first mcmc chunk to initialize storage for each chain
-mcmc_rds <- file.path(dest, mcmc_dirs[1], param_file_name)
-rds <- read_rds(mcmc_rds)
-mcmc <- rds$params
-n_chains <- length(mcmc)
-store_mcmc <- list()
-
-# store each chain, will append below
-for(j in seq_len(n_chains)){
-  store_mcmc[[j]] <- as.matrix(mcmc[[j]])
-}
-
-# read each mcmc chunk, store each chain from the chunk as a matrix
-pb <- txtProgressBar(min = 2, max = length(mcmc_dirs), style = 1)
-for(i in 2:length(mcmc_dirs)){
-  mcmc_rds <- file.path(dest, mcmc_dirs[i], param_file_name)
-  rds <- read_rds(mcmc_rds)
-  mcmc <- rds$params
-  for(j in seq_len(n_chains)){
-    store_mcmc[[j]] <- rbind(store_mcmc[[j]], as.matrix(mcmc[[j]]))
-  }
-  setTxtProgressBar(pb, i)
-}
-close(pb)
-
-# need to create an mcmc list object to check for convergence
-params_mcmc_list <- as.mcmc.list(lapply(store_mcmc, as.mcmc))
+# get samples
+params_mcmc_list <- collate_mcmc_chunks(dest)
 
 # calculate psrf (convergence stat) and effective sample size
 diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15)
