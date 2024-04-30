@@ -216,17 +216,95 @@ create_X <- function(df, cols = c("c_road_den", "c_rugged", "c_canopy")){
     as.matrix()
 }
 
+get_prior_hyperparams <- function(informed, posterior_path = NULL, data_rep = NULL){
 
+  if(informed){
+
+    post <- read_rds(posterior_path)
+
+    get_vec <- function(df, node){
+      df |>
+        select(contains(node)) |>
+        pivot_longer(cols = everything(),
+                     names_to = "node") |>
+        group_by(node) |>
+        summarise(mu = mean(value),
+                  tau = 1/var(value))
+    }
+
+    log_rho <- get_vec(post, "log_rho")
+    p_mu <- get_vec(post, "p_mu")
+    log_gamma <- get_vec(post, "log_gamma")
+    beta1 <- get_vec(post, "beta1")
+    beta_p <- get_vec(post, "beta_p")
+    log_nu <- get_vec(post, "log_nu")
+
+    phi_mu <- get_vec(post, "phi_mu")
+    mu <- phi_mu$mu
+    psi <- phi_mu$tau
+    alpha <- mu * psi
+    beta <- (1 - mu) * psi
+
+    psi_phi <- get_vec(post, "psi_phi")
+    mu <- psi_phi$mu
+    v <- 1 / psi_phi$tau
+    shape <- (mu^2) / v
+    rate <- mu / v
+
+    hyperparams <- list(
+      log_rho_mu = log_rho$mu,
+      log_rho_tau = log_rho$tau,
+      p_mu_mu = p_mu$mu,
+      p_mu_tau = p_mu$tau,
+      log_gamma_mu = log_gamma$mu,
+      log_gamma_tau = log_gamma$tau,
+      beta1_mu = beta1$mu,
+      beta1_tau = beta1$tau,
+      beta_p_mu = beta_p$mu,
+      beta_p_tau = beta_p$tau,
+      phi_mu_a = alpha,
+      phi_mu_b = beta,
+      psi_shape = shape,
+      psi_rate = rate,
+      log_nu_mu = log_nu$mu,
+      log_nu_tau = log_nu$tau
+    )
+
+  } else {
+    survival_prior <- create_surv_prior(interval, data_repo)
+
+    hyperparams <- list(
+      log_rho_mu = rep(0, 5),
+      log_rho_tau = rep(0.1, 5),
+      p_mu_mu = rep(0, 2),
+      p_mu_tau = rep(1, 2),
+      log_gamma_mu = rep(0, 2),
+      log_gamma_tau = rep(0.1, 2),
+      beta1_mu = rep(0, 5),
+      beta1_tau = rep(1, 5),
+      beta_p_mu = rep(0, 15),
+      beta_p_tau = rep(1, 15),
+      phi_mu_a = survival_prior$alpha,
+      phi_mu_b = survival_prior$beta,
+      psi_shape = 1,
+      psi_rate = 0.1,
+      log_nu_mu = 2,
+      log_nu_tau = 1
+    )
+  }
+  return(hyperparams)
+}
 
 
 # ==========================================
 # Create lists for nimble ----
 # ==========================================
 
-nimble_constants <- function(df, data_ls, interval, data_repo){
+nimble_constants <- function(df, data_ls, interval, data_repo, informed, posterior_path = NULL){
 
   all_primary_periods <- create_all_primary_periods(df)
   n_time_prop <- n_timesteps(all_primary_periods)
+  n_method <- length(unique(df$method))
   nH <- N_lookup_table(all_primary_periods)
   nH_p <- N_lookup_data(df, all_primary_periods)
   N_full_unique <- nH_p |> unique()
@@ -235,7 +313,6 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
   targets::tar_assert_true(all(rem[,1] != 0))
   X <- create_X(df)
   start_end <- create_start_end(df, all_primary_periods)
-  survival_prior <- create_surv_prior(interval, data_repo)
 
   my_methods_fac <- tibble(
     method = c("TRAPS", "SNARE", "FIREARMS", "FIXED WING", "HELICOPTER"),
@@ -247,13 +324,16 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
   shooting_idx <- which(!method_chr %in% c("2_SNARE", "1_TRAPS"))
   method_num <- as.numeric(as.factor(method_chr))
 
-  list(
+  constants <- list(
     n_survey = nrow(df),
     n_ls = length(data_ls),
     n_property = length(unique(df$property)),
     n_first_survey = length(which(df$order == 1)),
     n_not_first_survey = length(which(df$order != 1)),
-    n_method = length(unique(df$method)),
+    n_method = n_method,
+    n_betaP = n_method * ncol(X),
+    beta_p_row = rep(1:n_method, each = ncol(X)),
+    beta_p_col = rep(1:ncol(X), n_method),
     n_time_prop = n_time_prop,
     n_trap_snare = length(trap_snare_idx),
     n_shooting = length(shooting_idx),
@@ -271,10 +351,13 @@ nimble_constants <- function(df, data_ls, interval, data_repo){
     start = start_end$start,
     end = start_end$end,
     method = method_num,
-    pp_len = interval * 7,
-    phi_mu_a = survival_prior$alpha,
-    phi_mu_b = survival_prior$beta
+    pp_len = interval * 7
   )
+
+  prior_hyperparams <- get_prior_hyperparams(informed = informed, posterior_path = posterior_path)
+
+  append(constants, prior_hyperparams)
+
 }
 
 nimble_data <- function(df, data_ls){

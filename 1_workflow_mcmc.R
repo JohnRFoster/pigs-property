@@ -60,8 +60,16 @@ data_litter_size <- round(
 # ===================================================
 # Prepare data for NIMBLE ----
 # ===================================================
-
-constants <- nimble_constants(data_final, data_litter_size, interval, data_repo)
+informed <- config$informed
+post_path <- config$file_post
+constants <- nimble_constants(
+  data_final,
+  data_litter_size,
+  interval,
+  data_repo,
+  informed,
+  post_path
+)
 data <- nimble_data(data_final, data_litter_size)
 
 n_chains <- as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK"))
@@ -72,7 +80,7 @@ message(n_chains, " chains")
 inits <- list()
 for(i in seq_len(n_chains)){
   set.seed(i)
-  inits[[i]] <- nimble_inits_sample(config$file_init, constants, data)
+  inits[[i]] <- nimble_inits(constants, data)
 }
 
 test_build(modelCode, constants, data, inits[[1]])

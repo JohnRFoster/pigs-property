@@ -5,31 +5,32 @@ modelCode <- nimbleCode({
 
   # priors
   for(i in 1:n_method){
-    log_rho[i] ~ dnorm(0, tau = 0.1)
+    log_rho[i] ~ dnorm(log_rho_mu[i], tau = log_rho_tau[i])
   }
 
   for(i in 1:2){
-    p_mu[i] ~ dnorm(0, tau = 1)
+    p_mu[i] ~ dnorm(p_mu_mu[i], tau = p_mu_tau[i])
     logit(p_unique[i]) <- p_mu[i]
 
-    log_gamma[i] ~ dnorm(0, tau = 0.1)
+    log_gamma[i] ~ dnorm(log_gamma_mu[i], tau = log_gamma_tau[i])
   }
 
   # non time varying coefficients - observation model
-  for(m in 1:n_method){
-    beta1[m] ~ dnorm(0, tau = 1)
-    for(i in 1:m_p){
-      beta_p[m, i] ~ dnorm(0, tau = 1)
-    }
+  for(i in 1:n_method){
+    beta1[i] ~ dnorm(beta1_mu[i], tau = beta1_tau[i])
+  }
+
+  for(i in 1:n_betaP){
+    beta_p[beta_p_row[i], beta_p_col[i]] ~ dnorm(beta_p_mu[i], tau = beta_p_tau[i])
   }
 
   # estimate apparent survival
   phi_mu ~ dbeta(phi_mu_a, phi_mu_b)
-  psi_phi ~ dgamma(1, 0.1)
+  psi_phi ~ dgamma(psi_shape, psi_rate)
   a_phi <- phi_mu * psi_phi
   b_phi <- (1 - phi_mu) * psi_phi
 
-  log_nu ~ dnorm(2, tau = 1)  # mean litter size
+  log_nu ~ dnorm(log_nu_mu, tau = log_nu_tau)  # mean litter size
   log(nu) <- log_nu
 
   ## convert to expected number of pigs per primary period
