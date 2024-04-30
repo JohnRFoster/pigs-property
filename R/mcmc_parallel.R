@@ -200,7 +200,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   params_mcmc_list <- as.mcmc.list(lapply(params, as.mcmc))
   diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15)
 
-  write_out <- function(p, no, nu, d, c, dest){
+  write_out <- function(p, no, nu, d, c, dest, write_N = FALSE){
 
     c_dir <- sprintf("%04d", c)
     path <- file.path(dest, c_dir)
@@ -212,7 +212,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
               file.path(path, f))
 
     converged <- all(d$psrf[, 2] < 1.1)
-    if(converged){
+    if(converged | write_N){
       f <- "observedAbundanceSamples.rds"
       write_rds(no, file.path(path, f))
 
@@ -225,6 +225,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   write_out(params, N_observed, N_unobserved, diagnostic, c, dest)
 
   continue <- !diagnostic$done
+  write_N <- FALSE
   while(continue){
     c <- c + 1
     resetMV <- TRUE
@@ -235,7 +236,8 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     message("Additional ", n_iters, " iterations completed in:")
     print(round(Sys.time() - start2, 2))
 
-    message("\n", n_iters * c, " total iterations completed in:")
+    total_iters <- n_iters * c
+    message("\n", total_iters, " total iterations completed in:")
     print(round(Sys.time() - start, 2))
 
     # use mcmc on clusters to subset parameters, observed states, and unobserved states
@@ -247,9 +249,17 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
     N_unobserved <- clusterEvalQ(cl, subset_N_unobserved()) |> as.matrix()
 
-    diagnostic <- continue_mcmc(params, effective_size = 5000, max_psrf = 15)
+    # every so often we should combine all samples and check convergence
+    if(total_iters %% 2e5 == 0){
+      params_mcmc_list <- collate_mcmc_chunks(dest)
+      diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15)
+      converged <- all(diagnostic$psrf[, 2] < 1.1)
+      write_N <- if_else(converged, TRUE, FALSE)
+    } else {
+      diagnostic <- continue_mcmc(params, effective_size = 5000, max_psrf = 15)
+    }
 
-    write_out(params, N_observed, N_unobserved, diagnostic, c, dest)
+    write_out(params, N_observed, N_unobserved, diagnostic, c, dest, write_N)
 
     continue <- !diagnostic$done
     message("=================================================")
