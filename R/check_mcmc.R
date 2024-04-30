@@ -27,6 +27,10 @@ dest <- file.path(out_dir, np_dir)
 
 # get samples
 params_mcmc_list <- collate_mcmc_chunks(dest)
+total_iter <- nrow(params_mcmc_list[[1]])
+n_chains <- length(params_mcmc_list)
+burnin <- round(total_iter / 2)
+params_burnin <- window(params_mcmc_list, start = burnin)
 
 # calculate psrf (convergence stat) and effective sample size
 diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15)
@@ -48,8 +52,12 @@ close(pb)
 message("  done")
 
 # get a random sample of the posterior and save
-draws <- sample.int(nrow(posterior), 5000, replace = TRUE)
-posterior_samples <- posterior |>
+posterior_burnin <- params_burnin |>
+  as.matrix()
+
+draws <- sample.int(nrow(posterior_burnin), 5000, replace = TRUE)
+posterior_samples <- posterior_burnin |>
+  as_tibble() |>
   slice(draws) |>
   mutate(np = config$np)
 
