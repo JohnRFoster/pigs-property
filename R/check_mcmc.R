@@ -41,7 +41,7 @@ posterior <- tibble()
 message("Create posterior tibble...")
 pb <- txtProgressBar(min = 1, max = n_chains, style = 1)
 for(i in seq_len(n_chains)){
-  chain_i <- as.matrix(store_mcmc[[i]]) |>
+  chain_i <- as.matrix(params_mcmc_list[[i]]) |>
     as_tibble() |>
     mutate(chain = i)
   posterior <- bind_rows(posterior, chain_i)
