@@ -206,7 +206,7 @@ subset_data_for_development <- function(df){
     distinct() |>
     group_by(agrp_prp_id) |>
     count() |>
-    filter(n >= 12) |>
+    filter(n >= 8) |>
     pull(agrp_prp_id)
 
   not_texas <- df |>
@@ -222,7 +222,7 @@ subset_data_for_development <- function(df){
     distinct() |>
     group_by(agrp_prp_id) |>
     count() |>
-    filter(n >= 35) |>
+    filter(n >= 30) |>
     pull(agrp_prp_id)
 
   new_data <- df |>

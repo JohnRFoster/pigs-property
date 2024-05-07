@@ -114,7 +114,7 @@ custom_samplers <- NULL
 
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
 np <- constants$n_property
-np_dir <- file.path("dev", paste0(np, "_properties_nullPriors"))
+np_dir <- file.path("dev", paste0(np, "_properties_prior22"))
 dest <- file.path(out_dir, np_dir)
 if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 write_rds(data_final, file.path(dest, "modelData.rds"))
