@@ -216,7 +216,7 @@ create_X <- function(df, cols = c("c_road_den", "c_rugged", "c_canopy")){
     as.matrix()
 }
 
-get_prior_hyperparams <- function(informed, posterior_path = NULL, data_rep = NULL){
+get_prior_hyperparams <- function(informed, posterior_path = NULL, data_repo = NULL){
 
   if(informed){
 
