@@ -29,78 +29,6 @@ dest <- file.path(out_dir, np_dir)
 # get samples
 mcmc_list <- collate_mcmc_chunks(dest)
 params_mcmc_list <- mcmc_list$params
-states_mcmc_list <- mcmc_list$states
-
-mcmc_matrix <- as.matrix(states_mcmc_list)
-draws <- sample.int(nrow(mcmc_matrix), 5000, replace = TRUE)
-abundance_sample <- mcmc_matrix[draws,] |>
-  as_tibble() |>
-  pivot_longer(cols = everything(),
-               names_to = "node",
-               values_to = "value") |>
-  mutate(n_id = as.numeric(stringr::str_extract(node, "(?<=\\[)\\d*(?=\\])")))
-
-data_path <- file.path(dest, "modelData.rds")
-model_data <- read_rds(data_path)
-
-all_pp <- create_all_primary_periods(model_data) |>
-  select(-timestep)
-
-property_info <- model_data |>
-  select(agrp_prp_id, property, primary_period, property_area_km2) |>
-  left_join(all_pp) |>
-  distinct()
-
-property_match <- left_join(abundance_sample, property_info) |>
-  mutate(density = value / property_area_km2) |>
-  group_by(node, n_id, agrp_prp_id, property, primary_period, property_area_km2) |>
-  summarise(mean = mean(density),
-            variance = var(density),
-            `0.025` = quantile(density, 0.025),
-            `0.05` = quantile(density, 0.05),
-            `0.1` = quantile(density, 0.1),
-            `0.25` = quantile(density, 0.25),
-            `0.5` = quantile(density, 0.5),
-            `0.75` = quantile(density, 0.75),
-            `0.9` = quantile(density, 0.9),
-            `0.95` = quantile(density, 0.95),
-            `0.975` = quantile(density, 0.975)) |>
-  ungroup()
-
-message("\n\nproperty match")
-print(glimpse(property_match))
-
-stop("TESTING END")
-
-
-quants = c(0.025, 0.05, seq(0.1, 0.9, by = 0.1), 0.95, 0.975)
-mcmc_quants <- t(apply(mcmc_matrix, 2, quantile, quants))
-node_names <- rownames(mcmc_quants)
-
-abundance_quants <- mcmc_quants |>
-  as_tibble() |>
-  mutate(node = node_names)
-
-mcmc_mean <- t(apply(mcmc_matrix, 2, mean)) |>
-  as_tibble() |>
-  pivot_longer(cols = everything(),
-               names_to = "node",
-               values_to = "mean")
-mcmc_var <- t(apply(mcmc_matrix, 2, var)) |>
-  as_tibble() |>
-  pivot_longer(cols = everything(),
-               names_to = "node",
-               values_to = "variance")
-
-
-
-print(mcmc_quants)
-print(mcmc_mean)
-print(mcmc_var)
-
-
-
-
 
 total_iter <- nrow(params_mcmc_list[[1]])
 n_chains <- length(params_mcmc_list)
@@ -202,4 +130,51 @@ for(i in seq_along(unique(plots$idx))){
 }
 close(pb)
 
-message("  done")
+message("Parameters Done")
+
+states_mcmc_list <- mcmc_list$states
+
+data_path <- file.path(dest, "modelData.rds")
+model_data <- read_rds(data_path)
+
+density_stats <- function(mcmc_list, data){
+
+  mcmc_matrix <- as.matrix(mcmc_list)
+  draws <- sample.int(nrow(mcmc_matrix), 5000, replace = TRUE)
+  abundance_sample <- mcmc_matrix[draws,] |>
+    as_tibble() |>
+    pivot_longer(cols = everything(),
+                 names_to = "node",
+                 values_to = "value") |>
+    mutate(n_id = as.numeric(stringr::str_extract(node, "(?<=\\[)\\d*(?=\\])")))
+
+  all_pp <- create_all_primary_periods(data) |>
+    select(-timestep)
+
+  property_info <- data |>
+    select(agrp_prp_id, property, primary_period, property_area_km2) |>
+    left_join(all_pp) |>
+    distinct()
+
+  property_match <- left_join(abundance_sample, property_info) |>
+    mutate(density = value / property_area_km2) |>
+    group_by(node, n_id, agrp_prp_id, property, primary_period, property_area_km2) |>
+    summarise(mean = mean(density),
+              variance = var(density),
+              `0.025` = quantile(density, 0.025),
+              `0.05` = quantile(density, 0.05),
+              `0.1` = quantile(density, 0.1),
+              `0.25` = quantile(density, 0.25),
+              `0.5` = quantile(density, 0.5),
+              `0.75` = quantile(density, 0.75),
+              `0.9` = quantile(density, 0.9),
+              `0.95` = quantile(density, 0.95),
+              `0.975` = quantile(density, 0.975)) |>
+    ungroup()
+  return(property_match)
+}
+
+density <- density_stats(states_mcmc_list, model_data)
+write_rds(density, file.path(dest, "densitySummaries.rds"))
+
+message("Density Done")
