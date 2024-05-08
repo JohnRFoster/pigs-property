@@ -14,6 +14,7 @@ library(coda)
 library(ggplot2)
 
 source("R/functions_nimble.R")
+source("R/functions_prep_nimble.R")
 
 config_name <- "hpc_dev"
 config <- config::get(config = config_name)
@@ -30,18 +31,65 @@ mcmc_list <- collate_mcmc_chunks(dest)
 params_mcmc_list <- mcmc_list$params
 states_mcmc_list <- mcmc_list$states
 
-quants = c(0.025, 0.05, seq(0.1, 0.9, by = 0.1), 0.95, 0.975)
 mcmc_matrix <- as.matrix(states_mcmc_list)
-mcmc_quants <- t(apply(mcmc_matrix, 2, quantile, quants))
-mcmc_mean <- t(apply(mcmc_matrix, 2, mean))
-mcmc_var <- t(apply(mcmc_matrix, 2, var))
+draws <- sample.int(nrow(mcmc_matrix), 5000, replace = TRUE)
+abundance_sample <- mcmc_matrix[draws,] |>
+  as_tibble() |>
+  pivot_longer(cols = everything(),
+               names_to = "node",
+               values_to = "value") |>
+  mutate(n_id = as.numeric(stringr::str_extract(node, "(?<=\\[)\\d*(?=\\])")))
 
-print(head(mcmc_matrix))
+data_path <- file.path(dest, "modelData.rds")
+model_data <- read_rds(data_path)
+
+all_pp <- create_all_primary_periods(data) |>
+  select(-timestep)
+
+message("\n\nall pp")
+print(glimpse(all_pp))
+
+property_info <- model_data |>
+  select(agrp_prp_id, property, n_id, property_area_km2) |>
+  left_join(all_pp)
+
+message("\n\nproperty info")
+print(glimpse(property_info))
+
+property_match <- left_join(abundance_sample, property_info) |>
+  mutate(density = value / property_area_km2)
+
+message("\n\nproperty match")
+print(glimpse(property_match))
+
+stop("TESTING END")
+
+
+quants = c(0.025, 0.05, seq(0.1, 0.9, by = 0.1), 0.95, 0.975)
+mcmc_quants <- t(apply(mcmc_matrix, 2, quantile, quants))
+node_names <- rownames(mcmc_quants)
+
+abundance_quants <- mcmc_quants |>
+  as_tibble() |>
+  mutate(node = node_names)
+
+mcmc_mean <- t(apply(mcmc_matrix, 2, mean)) |>
+  as_tibble() |>
+  pivot_longer(cols = everything(),
+               names_to = "node",
+               values_to = "mean")
+mcmc_var <- t(apply(mcmc_matrix, 2, var)) |>
+  as_tibble() |>
+  pivot_longer(cols = everything(),
+               names_to = "node",
+               values_to = "variance")
+
+
+
 print(mcmc_quants)
 print(mcmc_mean)
 print(mcmc_var)
 
-stop("TESTING END")
 
 
 
