@@ -32,7 +32,9 @@ params_mcmc_list <- mcmc_list$params
 
 total_iter <- nrow(params_mcmc_list[[1]])
 n_chains <- length(params_mcmc_list)
-burnin <- round(total_iter / 2)
+GBR <- gelman.plot(params)
+burnin <- GBR$last.iter[tail(which(apply(GBR$shrink[, , 2] > 1.1, 1, any)), 1) + 1]
+message("Burnin: ", burnin)
 params_burnin <- window(params_mcmc_list, start = burnin)
 
 # calculate psrf (convergence stat) and effective sample size
