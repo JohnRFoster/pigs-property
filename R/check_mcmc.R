@@ -33,7 +33,22 @@ states_mcmc_list <- mcmc_list$states
 print(str(params_mcmc_list))
 print(str(states_mcmc_list))
 
+
+quants = c(0.025, 0.05, seq(0.1, 0.9, by = 0.1), 0.95, 0.975)
+mcmc_matrix <- as.matrix(mcmc_list)
+mcmc_quants <- t(apply(mcmc_matrix, 2, quantile, quants))
+mcmc_mean <- t(apply(mcmc_matrix, 2, mean))
+mcmc_var <- t(apply(mcmc_matrix, 2, var))
+
+print(head(mcmc_matrix))
+print(mcmc_quants)
+print(mcmc_mean)
+print(mcmc_var)
+
 stop("TESTING END")
+
+
+
 
 total_iter <- nrow(params_mcmc_list[[1]])
 n_chains <- length(params_mcmc_list)
