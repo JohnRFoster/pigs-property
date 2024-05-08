@@ -40,28 +40,32 @@ abundance_sample <- mcmc_matrix[draws,] |>
                values_to = "value") |>
   mutate(n_id = as.numeric(stringr::str_extract(node, "(?<=\\[)\\d*(?=\\])")))
 
-message("\n\nabundance sample")
-print(glimpse(abundance_sample))
-
 data_path <- file.path(dest, "modelData.rds")
 model_data <- read_rds(data_path)
 
 all_pp <- create_all_primary_periods(model_data) |>
   select(-timestep)
 
-message("\n\nall pp")
-print(glimpse(all_pp))
-
 property_info <- model_data |>
   select(agrp_prp_id, property, primary_period, property_area_km2) |>
   left_join(all_pp) |>
   distinct()
 
-message("\n\nproperty info")
-print(glimpse(property_info))
-
 property_match <- left_join(abundance_sample, property_info) |>
-  mutate(density = value / property_area_km2)
+  mutate(density = value / property_area_km2) |>
+  group_by(node, n_id, agrp_prp_id, property, primary_period, property_area_km2) |>
+  summarise(mean = mean(density),
+            variance = var(density),
+            `0.025` = quantile(density, 0.025),
+            `0.05` = quantile(density, 0.05),
+            `0.1` = quantile(density, 0.1),
+            `0.25` = quantile(density, 0.25),
+            `0.5` = quantile(density, 0.5),
+            `0.75` = quantile(density, 0.75),
+            `0.9` = quantile(density, 0.9),
+            `0.95` = quantile(density, 0.95),
+            `0.975` = quantile(density, 0.975)) |>
+  ungroup()
 
 message("\n\nproperty match")
 print(glimpse(property_match))
