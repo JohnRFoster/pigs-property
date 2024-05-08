@@ -43,7 +43,7 @@ abundance_sample <- mcmc_matrix[draws,] |>
 data_path <- file.path(dest, "modelData.rds")
 model_data <- read_rds(data_path)
 
-all_pp <- create_all_primary_periods(data) |>
+all_pp <- create_all_primary_periods(model_data) |>
   select(-timestep)
 
 message("\n\nall pp")
