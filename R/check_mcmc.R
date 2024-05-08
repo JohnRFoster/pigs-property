@@ -50,7 +50,7 @@ message("\n\nall pp")
 print(glimpse(all_pp))
 
 property_info <- model_data |>
-  select(agrp_prp_id, property, n_id, property_area_km2) |>
+  select(agrp_prp_id, property, primary_period, property_area_km2) |>
   left_join(all_pp)
 
 message("\n\nproperty info")
