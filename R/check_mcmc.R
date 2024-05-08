@@ -66,10 +66,10 @@ posterior_samples <- posterior_burnin |>
 
 # create dir for posterior samples and traceplots
 np_dir <- paste0(np_dir, "_combined")
-dest <- file.path(out_dir, np_dir)
-if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+out_dest <- file.path(out_dir, np_dir)
+if(!dir.exists(out_dest)) dir.create(out_dest, recursive = TRUE, showWarnings = FALSE)
 
-write_rds(posterior_samples, file.path(dest, "posteriorSamples.rds"))
+write_rds(posterior_samples, file.path(out_dest, "posteriorSamples.rds"))
 
 # function to create traceplots from thinned posterior
 trace_plot <- function(post, nodes_2_plot, thin = 5000){
@@ -123,7 +123,7 @@ for(i in seq_along(unique(plots$idx))){
 
   gg <- trace_plot(posterior, n2p)
 
-  filename <- file.path(dest, paste0("mcmcTimeseries_", sprintf("%03d", i), ".pdf"))
+  filename <- file.path(out_dest, paste0("mcmcTimeseries_", sprintf("%03d", i), ".pdf"))
   ggsave(filename, gg)
 
   setTxtProgressBar(pb, i)
@@ -175,6 +175,6 @@ density_stats <- function(mcmc_list, data){
 }
 
 density <- density_stats(states_mcmc_list, model_data)
-write_rds(density, file.path(dest, "densitySummaries.rds"))
+write_rds(density, file.path(out_dest, "densitySummaries.rds"))
 
 message("Density Done")
