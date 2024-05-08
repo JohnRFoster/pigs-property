@@ -106,6 +106,7 @@ collate_mcmc_chunks <- function(dest){
   mcmc_dirs <- list.files(dest)
   mcmc_dirs <- setdiff(mcmc_dirs, "modelData.rds")
   param_file_name <- "paramSamples.rds"
+  state_file_name <- "observedAbundanceSamples.rds"
 
   # use the first mcmc chunk to initialize storage for each chain
   mcmc_rds <- file.path(dest, mcmc_dirs[1], param_file_name)
@@ -113,6 +114,8 @@ collate_mcmc_chunks <- function(dest){
   mcmc <- rds$params
   n_chains <- length(mcmc)
   store_mcmc <- list()
+  store_mcmc_state <- list()
+  state_count <- 0
 
   # store each chain, will append below
   for(j in seq_len(n_chains)){
@@ -128,10 +131,32 @@ collate_mcmc_chunks <- function(dest){
     for(j in seq_len(n_chains)){
       store_mcmc[[j]] <- rbind(store_mcmc[[j]], as.matrix(mcmc[[j]]))
     }
+
+    state_rds <- file.path(dest, mcmc_dirs[i], state_file_name)
+    if(file.exists(state_rds)){
+
+      mcmc <- read_rds(state_rds)
+
+      if(state_count == 0){
+        for(j in seq_len(n_chains)){
+          store_mcmc_state[[j]] <- as.matrix(mcmc[[j]])
+        }
+      } else {
+        for(j in seq_len(n_chains)){
+          store_mcmc_state[[j]] <- rbind(store_mcmc_state[[j]], as.matrix(mcmc[[j]]))
+        }
+      }
+      state_count <- 1
+    }
+
     setTxtProgressBar(pb, i)
   }
   close(pb)
 
   # need to create an mcmc list object to check for convergence
-  as.mcmc.list(lapply(store_mcmc, as.mcmc))
+  params <- as.mcmc.list(lapply(store_mcmc, as.mcmc))
+  states <- as.mcmc.list(lapply(purrr::compact(store_mcmc_state), as.mcmc))
+
+  return(list(params = params, states = states))
+
 }
