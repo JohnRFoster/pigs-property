@@ -40,6 +40,9 @@ abundance_sample <- mcmc_matrix[draws,] |>
                values_to = "value") |>
   mutate(n_id = as.numeric(stringr::str_extract(node, "(?<=\\[)\\d*(?=\\])")))
 
+message("\n\nabundance sample")
+print(glimpse(abundance_sample))
+
 data_path <- file.path(dest, "modelData.rds")
 model_data <- read_rds(data_path)
 
@@ -51,7 +54,7 @@ print(glimpse(all_pp))
 
 property_info <- model_data |>
   select(agrp_prp_id, property, primary_period, property_area_km2) |>
-  left_join(all_pp)
+  right_join(all_pp)
 
 message("\n\nproperty info")
 print(glimpse(property_info))
