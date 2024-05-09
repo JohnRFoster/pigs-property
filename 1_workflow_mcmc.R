@@ -46,6 +46,22 @@ targets::tar_assert_true(!any(is.na(data_final$c_road_den)))
 targets::tar_assert_true(!any(is.na(data_final$c_rugged)))
 targets::tar_assert_true(!any(is.na(data_final$c_canopy)))
 
+if(dev){
+  data_for_nimble <- subset_data_for_development(
+    df = data_final,
+    max_length = 50,          # maximum time series length (includes unsampled PPs)
+    min_sampled_pp = 20,      # minimum number of sampled PPs in time series
+    n_strata = 5,             # number of samples per strata (decile) of environmental covaraites
+    properties_include = NULL # properties we want to make sure are in development data
+  )
+} else {
+  data_for_nimble <- data_final
+}
+
+message("\nTotal properties in data: ", length(unique(data_for_nimble$agrp_prp_id)))
+message("\nTotal counties in data: ", length(unique(data_for_nimble$county_code)))
+
+
 # mean litter size year from VerCauteren et al. 2019 pg 63
 data_litter_size <- round(
   c(
@@ -63,14 +79,14 @@ data_litter_size <- round(
 informed <- config$informed
 post_path <- config$file_post
 constants <- nimble_constants(
-  data_final,
+  data_for_nimble,
   data_litter_size,
   interval,
   data_repo,
   informed,
   post_path
 )
-data <- nimble_data(data_final, data_litter_size)
+data <- nimble_data(data_for_nimble, data_litter_size)
 
 n_chains <- as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK"))
 if(is.na(n_chains)) n_chains <- 3
@@ -115,10 +131,10 @@ custom_samplers <- NULL
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
 np <- constants$n_property
 info <- if_else(informed, "informedPriors", "uninformedPriors")
-np_dir <- file.path("dev", paste0(np, "_properties_", info))
+np_dir <- file.path("dev", paste0(np, "properties_", info))
 dest <- file.path(out_dir, np_dir)
 if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
-write_rds(data_final, file.path(dest, "modelData.rds"))
+write_rds(data_for_nimble, file.path(dest, "modelData.rds"))
 
 message("Begin Parallel sampling and make cluster")
 cl <- makeCluster(n_chains)

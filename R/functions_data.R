@@ -183,7 +183,10 @@ get_fips <- function(file = "data/fips/national_county.txt"){
                    comment = '#')
 }
 
-subset_data_for_development <- function(df){
+subset_data_for_development <- function(df, max_length, min_sampled_pp, n_strata, properties_include = NULL){
+
+  require(rsample)
+  set.seed(753)
 
   # get properties that have a total time series length of 50 primary periods or less
   less_than_50_pp <- df |>
@@ -196,7 +199,7 @@ subset_data_for_development <- function(df){
     mutate(delta = c(0, diff(primary_period))) |>
     ungroup() |>
     filter(delta != 0,
-           delta <= 50) |>
+           delta <= max_length) |>
     pull(agrp_prp_id)
 
   # given the properties identified above, subset to those that have at least n observed primary periods
@@ -206,39 +209,50 @@ subset_data_for_development <- function(df){
     distinct() |>
     group_by(agrp_prp_id) |>
     count() |>
-    filter(n >= 10) |>
+    filter(n >= min_sampled_pp) |>
     pull(agrp_prp_id)
 
-  not_texas <- df |>
-    filter(agrp_prp_id %in% good_ts,
-           st_name != "TEXAS") |>
-    pull(agrp_prp_id) |>
-    unique()
+  # create strata by decile
+  # each property will belong to a decile of each land cover variable
+  df_strata <- df |>
+    mutate(canopy_strata = make_strata(c_canopy, breaks = 10),
+           rugged_strata = make_strata(c_rugged, breaks = 10),
+           road_den_strata = make_strata(c_road_den, breaks = 10)) |>
+    filter(agrp_prp_id %in% good_ts) |>
+    select(agrp_prp_id, contains("strata")) |>
+    distinct()
 
-  texas <- df |>
-    filter(agrp_prp_id %in% good_ts,
-           st_name == "TEXAS") |>
-    select(agrp_prp_id, primary_period) |>
-    distinct() |>
-    group_by(agrp_prp_id) |>
-    count() |>
-    filter(n >= 30) |>
-    pull(agrp_prp_id)
+  col_sample <- function(dfs, col){
+    min_sample <- dfs |>
+      pull(all_of(col)) |>
+      table() |>
+      min()
 
-  new_data <- df |>
-    filter(agrp_prp_id %in% c(not_texas, texas))
+    dfs |>
+      group_by(.data[[col]]) |>
+      slice_sample(n = min(min_sample, n_strata)) |>
+      ungroup() |>
+      pull(agrp_prp_id)
+  }
 
-  message("n properties in each state")
-  new_data |>
-    select(agrp_prp_id, st_name) |>
-    distinct() |>
-    pull(st_name) |>
-    table() |>
-    print()
+  canopy_sample <- col_sample(df_strata, "canopy_strata")
+  rugged_sample <- col_sample(df_strata, "rugged_strata")
+  road_den_sample <- col_sample(df_strata, "road_den_strata")
 
-  message("n times each method used")
-  print(table(new_data$method))
+  props <- c(canopy_sample, rugged_sample, road_den_sample)
+  if(!is.null(properties_include)) props <- c(props, properties_include)
 
+  df_sample <- df_strata |>
+    filter(agrp_prp_id %in% unique(props))
+
+  message("Number of properties in each canopy strata:")
+  print(table(df_sample$canopy_strata))
+  message("Number of properties in each rugged strata:")
+  print(table(df_sample$rugged_strata))
+  message("Number of properties in each road density strata:")
+  print(table(df_sample$road_den_strata))
+
+  new_data <- df |> filter(agrp_prp_id %in% props)
   return(new_data)
 }
 
@@ -301,23 +315,15 @@ get_data <- function(file, interval, dev){
     order_of_events() |>           # assign order number, check
     county_codes()                 # county codes and renaming
 
-  if(dev){
-    data_to_model <- subset_data_for_development(data_timestep)
-  } else {
-    data_to_model <- data_timestep
-  }
-
   # now we have two columns for time
   # primary_period is how [interval] sequences are aligned across the data set
   # timestep is the sequence of primary periods within a property
-  timestep_df <- create_timestep_df(data_to_model)
+  timestep_df <- create_timestep_df(data_timestep)
 
-  data_pp <- left_join(data_to_model, timestep_df,
+  data_pp <- left_join(data_timestep, timestep_df,
                        by = join_by(agrp_prp_id, primary_period)) |>
     mutate(primary_period = primary_period - min(primary_period) + 1)
 
-  message("\nTotal properties in data: ", length(unique(data_pp$agrp_prp_id)))
-  message("\nTotal counties in data: ", length(unique(data_pp$county_code)))
   return(data_pp)
 
 }
