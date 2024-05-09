@@ -188,12 +188,12 @@ subset_data_for_development <- function(df){
   # get properties that have a total time series length of 50 primary periods or less
   less_than_50_pp <- df |>
     filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS")) |>
-    select(agrp_prp_id, timestep) |>
+    select(agrp_prp_id, primary_period) |>
     distinct() |>
     group_by(agrp_prp_id) |>
-    filter(timestep == min(timestep) |
-             timestep == max(timestep)) |>
-    mutate(delta = c(0, diff(timestep))) |>
+    filter(primary_period == min(primary_period) |
+             primary_period == max(primary_period)) |>
+    mutate(delta = c(0, diff(primary_period))) |>
     ungroup() |>
     filter(delta != 0,
            delta <= 50) |>
@@ -202,11 +202,11 @@ subset_data_for_development <- function(df){
   # given the properties identified above, subset to those that have at least n observed primary periods
   good_ts <- df |>
     filter(agrp_prp_id %in% less_than_50_pp) |>
-    select(agrp_prp_id, timestep) |>
+    select(agrp_prp_id, primary_period) |>
     distinct() |>
     group_by(agrp_prp_id) |>
     count() |>
-    filter(n >= 8) |>
+    filter(n >= 10) |>
     pull(agrp_prp_id)
 
   not_texas <- df |>
@@ -218,7 +218,7 @@ subset_data_for_development <- function(df){
   texas <- df |>
     filter(agrp_prp_id %in% good_ts,
            st_name == "TEXAS") |>
-    select(agrp_prp_id, timestep) |>
+    select(agrp_prp_id, primary_period) |>
     distinct() |>
     group_by(agrp_prp_id) |>
     count() |>
@@ -290,15 +290,7 @@ get_data <- function(file, interval, dev){
     distinct()
 
   # create PP of length [interval]
-  data_timestep <- create_primary_periods(data_mis, interval)
-
-  if(dev){
-    data_to_model <- subset_data_for_development(data_timestep)
-  } else {
-    data_to_model <- data_timestep
-  }
-
-  data_processed <- data_to_model |>
+  data_timestep <- create_primary_periods(data_mis, interval) |>
     resolve_duplicate() |>         # resolve duplicate property areas
     take_filter() |>               # remove properties with zero pigs taken
     dynamic_filter() |>            # filter out bad events & properties
@@ -307,18 +299,25 @@ get_data <- function(file, interval, dev){
     order_interval() |>            # determine midpoints from start/end dates
     order_stochastic() |>          # randomly order events
     order_of_events() |>           # assign order number, check
-    county_codes()  |>             # county codes and renaming
-    mutate(primary_period = primary_period - min(primary_period) + 1)
+    county_codes()                 # county codes and renaming
+
+  if(dev){
+    data_to_model <- subset_data_for_development(data_timestep)
+  } else {
+    data_to_model <- data_timestep
+  }
 
   # now we have two columns for time
   # primary_period is how [interval] sequences are aligned across the data set
   # timestep is the sequence of primary periods within a property
-  timestep_df <- create_timestep_df(data_processed)
+  timestep_df <- create_timestep_df(data_to_model)
 
-  data_pp <- left_join(data_processed, timestep_df,
-                       by = join_by(agrp_prp_id, primary_period))
+  data_pp <- left_join(data_to_model, timestep_df,
+                       by = join_by(agrp_prp_id, primary_period)) |>
+    mutate(primary_period = primary_period - min(primary_period) + 1)
 
-  message("\nTotal properties in development data: ", length(unique(data_pp$agrp_prp_id)))
+  message("\nTotal properties in data: ", length(unique(data_pp$agrp_prp_id)))
+  message("\nTotal counties in data: ", length(unique(data_pp$county_code)))
   return(data_pp)
 
 }
