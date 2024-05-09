@@ -354,7 +354,9 @@ nimble_constants <- function(df, data_ls, interval, data_repo, informed, posteri
     pp_len = interval * 7
   )
 
-  prior_hyperparams <- get_prior_hyperparams(informed = informed, posterior_path = posterior_path)
+  prior_hyperparams <- get_prior_hyperparams(informed = informed,
+                                             posterior_path = posterior_path,
+                                             data_repo = data_repo)
 
   append(constants, prior_hyperparams)
 
