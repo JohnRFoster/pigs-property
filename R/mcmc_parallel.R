@@ -251,7 +251,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
     # every so often we should combine all samples and check convergence
     if(total_iters %% 2e5 == 0){
-      params_mcmc_list <- collate_mcmc_chunks(dest)
+      params_mcmc_list <- collate_mcmc_chunks(dest)$params
       diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15)
       converged <- all(diagnostic$psrf[, 2] < 1.1)
       write_N <- if_else(converged, TRUE, FALSE)
