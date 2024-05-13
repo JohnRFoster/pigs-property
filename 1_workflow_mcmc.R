@@ -50,8 +50,8 @@ if(dev){
   data_for_nimble <- subset_data_for_development(
     df = data_final,
     max_length = 50,          # maximum time series length (includes unsampled PPs)
-    min_sampled_pp = 20,      # minimum number of sampled PPs in time series
-    n_strata = 5,             # number of samples per strata (decile) of environmental covaraites
+    min_sampled_pp = 12,      # minimum number of sampled PPs in time series
+    n_strata = 8,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
 } else {
@@ -60,6 +60,8 @@ if(dev){
 
 message("\nTotal properties in data: ", length(unique(data_for_nimble$agrp_prp_id)))
 message("\nTotal counties in data: ", length(unique(data_for_nimble$county_code)))
+message("\nMethods in data:")
+table(data_for_nimble$method)
 
 
 # mean litter size year from VerCauteren et al. 2019 pg 63
