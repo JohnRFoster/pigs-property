@@ -1,7 +1,7 @@
 default:
   interval: 4
   dev: TRUE
-  informed: FALSE
+  informed: TRUE
   n_iter: 1000
   mcmc_config: "mostlyDefault"
   data_repo: "C:/Users/John.Foster/OneDrive - USDA/Desktop/fosteR/pigs-statistical/data"
@@ -11,5 +11,5 @@ default:
 
 hpc_dev:
   data_repo: "/lustrefs/ceah/feral-swine/data"
-  file_post: "/lustrefs/ceah/feral-swine/property-fits/dev/22_properties_combined/posteriorSamples.rds"
+  file_post: "/lustrefs/ceah/feral-swine/property-fits/dev/64properties_uninformedPriors_combined/posteriorSamples.rds"
   n_iter: 50000
