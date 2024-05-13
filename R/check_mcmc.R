@@ -27,7 +27,7 @@ np_dir <- "dev/64properties_uninformedPriors"
 dest <- file.path(out_dir, np_dir)
 
 # get samples
-mcmc_list <- collate_mcmc_chunks(dest)
+mcmc_list <- collate_mcmc_chunks(dest, start = 25)
 params_mcmc_list <- mcmc_list$params
 
 total_iter <- nrow(params_mcmc_list[[1]])

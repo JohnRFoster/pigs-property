@@ -102,9 +102,10 @@ test_build <- function(code, constants, data, inits){
   message("==================\n")
 }
 
-collate_mcmc_chunks <- function(dest){
+collate_mcmc_chunks <- function(dest, start = 1){
   mcmc_dirs <- list.files(dest)
   mcmc_dirs <- setdiff(mcmc_dirs, "modelData.rds")
+  mcmc_dirs <- mcmc_dirs[start:length(mcmc_dirs)]
   param_file_name <- "paramSamples.rds"
   state_file_name <- "observedAbundanceSamples.rds"
 
