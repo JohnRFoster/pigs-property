@@ -29,8 +29,8 @@ file <- file.path(data_repo, config$file_mis)
 interval <- config$interval
 dev <- config$dev
 
-data_farm_bill <- read_csv(file.path(data_repo, "All_FB_Agreements.csv"))
-farm_bill_properties <- data_farm_bill |> pull(`AGR ID`)
+# data_farm_bill <- read_csv(file.path(data_repo, "All_FB_Agreements.csv"))
+# farm_bill_properties <- data_farm_bill |> pull(`AGR ID`)
 
 data_mis <- get_data(file, interval)
 
