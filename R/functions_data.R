@@ -123,6 +123,7 @@ order_stochastic <- function(order.df){
     count() |>
     arrange(agrp_prp_id, midpoint)
 
+  set.seed(8)
 
   order_df <- order.df
   order_df$jittered_midpoint <- NA
@@ -189,36 +190,40 @@ subset_data_for_development <- function(df, max_length, min_sampled_pp, n_strata
   set.seed(753)
 
   # get properties that have a total time series length of 50 primary periods or less
-  less_than_50_pp <- df |>
+  ts_length <- df |>
     filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS")) |>
     select(agrp_prp_id, primary_period) |>
     distinct() |>
     group_by(agrp_prp_id) |>
     filter(primary_period == min(primary_period) |
              primary_period == max(primary_period)) |>
-    mutate(delta = c(0, diff(primary_period))) |>
+    mutate(delta = c(0, diff(primary_period) + 1)) |>
     ungroup() |>
     filter(delta != 0,
-           delta <= max_length) |>
-    pull(agrp_prp_id)
+           delta <= max_length)
+
+  good_props <- ts_length |> pull(agrp_prp_id) |> unique()
 
   # given the properties identified above, subset to those that have at least n observed primary periods
-  good_ts <- df |>
-    filter(agrp_prp_id %in% less_than_50_pp) |>
+  n_obs <- df |>
+    filter(agrp_prp_id %in% good_props) |>
     select(agrp_prp_id, primary_period) |>
     distinct() |>
     group_by(agrp_prp_id) |>
-    count() |>
-    filter(n >= min_sampled_pp) |>
+    count()
+
+  good_ts <- left_join(ts_length, n_obs) |>
+    mutate(precent_obs = n / delta) |>
+    filter(precent_obs >= min_sampled_pp) |>
     pull(agrp_prp_id)
 
   # create strata by decile
   # each property will belong to a decile of each land cover variable
   df_strata <- df |>
+    filter(agrp_prp_id %in% good_ts) |>
     mutate(canopy_strata = make_strata(c_canopy, breaks = 10),
            rugged_strata = make_strata(c_rugged, breaks = 10),
            road_den_strata = make_strata(c_road_den, breaks = 10)) |>
-    filter(agrp_prp_id %in% good_ts) |>
     select(agrp_prp_id, contains("strata")) |>
     distinct()
 
@@ -286,7 +291,7 @@ create_timestep_df <- function(df){
 }
 
 
-get_data <- function(file, interval, dev){
+get_data <- function(file, interval){
   all_take <- read_csv(file, show_col_types = FALSE) |>
     mutate(cnty_name = if_else(grepl("ST ", cnty_name), gsub("ST ", "ST. ", cnty_name), cnty_name),
            cnty_name = if_else(grepl("KERN", cnty_name), "KERN", cnty_name))

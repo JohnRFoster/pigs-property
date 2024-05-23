@@ -9,7 +9,7 @@ library(tidyr)
 library(readr)
 library(parallel)
 
-config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -28,7 +28,11 @@ data_repo <- config$data_repo
 file <- file.path(data_repo, config$file_mis)
 interval <- config$interval
 dev <- config$dev
-data_mis <- get_data(file, interval, dev)
+
+data_farm_bill <- read_csv(file.path(data_repo, "All_FB_Agreements.csv"))
+farm_bill_properties <- data_farm_bill |> pull(`AGR ID`)
+
+data_mis <- get_data(file, interval)
 
 ## observation covariates ----
 file <- file.path(data_repo, config$file_land)
@@ -50,8 +54,8 @@ if(dev){
   data_for_nimble <- subset_data_for_development(
     df = data_final,
     max_length = 50,          # maximum time series length (includes unsampled PPs)
-    min_sampled_pp = 12,      # minimum number of sampled PPs in time series
-    n_strata = 8,             # number of samples per strata (decile) of environmental covaraites
+    min_sampled_pp = 0.4,      # minimum number of sampled PPs in time series
+    n_strata = 10,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
 } else {
