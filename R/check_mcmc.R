@@ -22,7 +22,7 @@ config <- config::get(config = config_name)
 out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
 np <- 77
 # np_dir <- file.path("dev", paste0(np, "_properties"))
-np_dir <- "dev/64properties_uninformedPriors"
+np_dir <- "dev/256properties_uninformedPriors"
 # where mcmc chunks are stored
 dest <- file.path(out_dir, np_dir)
 
