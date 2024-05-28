@@ -184,13 +184,8 @@ get_fips <- function(file = "data/fips/national_county.txt"){
                    comment = '#')
 }
 
-subset_data_for_development <- function(df, max_length, min_sampled_pp, n_strata, properties_include = NULL){
-
-  require(rsample)
-  set.seed(753)
-
-  # get properties that have a total time series length of 50 primary periods or less
-  ts_length <- df |>
+get_ts_length <- function(df){
+  df |>
     filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS")) |>
     select(agrp_prp_id, primary_period) |>
     distinct() |>
@@ -199,18 +194,31 @@ subset_data_for_development <- function(df, max_length, min_sampled_pp, n_strata
              primary_period == max(primary_period)) |>
     mutate(delta = c(0, diff(primary_period) + 1)) |>
     ungroup() |>
-    filter(delta != 0,
-           delta <= max_length)
+    filter(delta != 0)
+}
 
-  good_props <- ts_length |> pull(agrp_prp_id) |> unique()
-
-  # given the properties identified above, subset to those that have at least n observed primary periods
-  n_obs <- df |>
+get_n_observations <- function(df, good_props){
+  df |>
     filter(agrp_prp_id %in% good_props) |>
     select(agrp_prp_id, primary_period) |>
     distinct() |>
     group_by(agrp_prp_id) |>
     count()
+}
+
+subset_data_for_development <- function(df, max_length, min_sampled_pp, n_strata, properties_include = NULL){
+
+  require(rsample)
+  set.seed(753)
+
+  # get properties that have a total time series length of 50 primary periods or less
+  ts_length <- get_ts_length(df) |>
+    filter(delta <= max_length)
+
+  good_props <- ts_length |> pull(agrp_prp_id) |> unique()
+
+  # given the properties identified above, subset to those that have at least n observed primary periods
+  n_obs <- get_n_observations(df, good_props)
 
   good_ts <- left_join(ts_length, n_obs) |>
     mutate(precent_obs = n / delta) |>
@@ -220,7 +228,6 @@ subset_data_for_development <- function(df, max_length, min_sampled_pp, n_strata
   # create strata by decile
   # each property will belong to a decile of each land cover variable
   df_strata <- df |>
-    filter(agrp_prp_id %in% good_ts) |>
     mutate(canopy_strata = make_strata(c_canopy, breaks = 10),
            rugged_strata = make_strata(c_rugged, breaks = 10),
            road_den_strata = make_strata(c_road_den, breaks = 10)) |>
@@ -234,6 +241,7 @@ subset_data_for_development <- function(df, max_length, min_sampled_pp, n_strata
       min()
 
     dfs |>
+      filter(agrp_prp_id %in% good_ts) |>
       group_by(.data[[col]]) |>
       slice_sample(n = min(min_sample, n_strata)) |>
       ungroup() |>
