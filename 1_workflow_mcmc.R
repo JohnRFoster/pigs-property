@@ -95,7 +95,7 @@ if(first_fit){ # run first fit
   prep_and_run_mcmc(informed, out_dir, data_for_nimble, monitors_add, custom_samplers)
 } else { # run iterative fitting
 
-  n_props_fit <- as.numeric(grep("\\d*", files_in_out_dir, value = TRUE))
+  n_props_fit <- as.numeric(stringr::str_extract(files_in_out_dir, "\\d*(?=\\D)"))
   last_fit <- max(n_props_fit)
   n_total_properties <- length(unique(data_final$agrp_prp_id))
 
@@ -103,7 +103,7 @@ if(first_fit){ # run first fit
 
   for(i in seq_len(n_properties_to_fit)){
 
-    n_props_fit <- as.numeric(grep("\\d*", files_in_out_dir, value = TRUE))
+    n_props_fit <- as.numeric(stringr::str_extract(files_in_out_dir, "\\d*(?=\\D)"))
     last_fit <- max(n_props_fit)
     path_last_fit <- file.path(out_dir, last_fit, "modelData.rds")
     data_last_fit <- read_rds(path_last_fit)
