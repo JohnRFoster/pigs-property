@@ -9,14 +9,14 @@ library(tidyr)
 library(readr)
 library(parallel)
 
-config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
 source("R/functions_prep_nimble.R")
 source("R/functions_nimble.R")
-source("R/nimble_removal_model.R")
-source("R/mcmc_parallel.R")
+source("R/prep_and_run_mcmc.R")
+source("R/iterative_fitting.R")
 
 # ===================================================
 # Data ingest ----
@@ -51,6 +51,23 @@ targets::tar_assert_true(!any(is.na(data_final$c_rugged)))
 targets::tar_assert_true(!any(is.na(data_final$c_canopy)))
 
 if(dev){
+
+} else {
+  data_for_nimble <- data_final
+}
+
+
+
+params_check <- config$params_check
+out_dir <- config$out_dir
+np <- constants$n_property
+
+files_in_out_dir <- list.files(out_dir)
+first_fit <- length(files_in_out_dir) == 0
+
+if(first_fit){
+  informed <- FALSE
+
   data_for_nimble <- subset_data_for_development(
     df = data_final,
     max_length = 1000,          # maximum time series length (includes unsampled PPs)
@@ -58,107 +75,52 @@ if(dev){
     n_strata = 15,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
+
 } else {
-  data_for_nimble <- data_final
+  informed <- TRUE
 }
 
-first_fit_properties <- unique(data_for_nimble$agrp_prp_id)
-
-message("\nTotal properties in data: ", length(first_fit_properties))
+fit_properties <- unique(data_for_nimble$agrp_prp_id)
+message("\nTotal properties in data: ", length(fit_properties))
 message("\nTotal counties in data: ", length(unique(data_for_nimble$county_code)))
 message("\nMethods in data:")
 table(data_for_nimble$method)
 
 
-# mean litter size year from VerCauteren et al. 2019 pg 63
-data_litter_size <- round(
-  c(
-    5.6, 6.1, 5.6, 6.1, 4.2, 5.0, 5.0, 6.5, 5.5, 6.8,
-    5.6, 5.9, 4.9, 5.1, 4.5, 4.7, 5.3, 5.7, 7.4, 8.4,
-    4.7, 4.9, 3.0, 3.0, 4.8, 4.8, 4.2, 5.4, 4.7, 5.2, 5.4
-  )
-)
+monitors_add <- "N"
+custom_samplers <- NULL
+post_path <- out_dir
 
+if(first_fit){ # run first fit
+  prep_and_run_mcmc(informed, out_dir, data_for_nimble, monitors_add, custom_samplers)
+} else { # run iterative fitting
 
+  n_props_fit <- as.numeric(grep("\\d*", files_in_out_dir, value = TRUE))
+  last_fit <- max(n_props_fit)
+  n_total_properties <- length(unique(data_final$agrp_prp_id))
 
-# ===================================================
-# Prepare data for NIMBLE ----
-# ===================================================
-informed <- config$informed
-post_path <- config$file_post
-constants <- nimble_constants(
-  data_for_nimble,
-  data_litter_size,
-  interval,
-  data_repo,
-  informed,
-  post_path
-)
-data <- nimble_data(data_for_nimble, data_litter_size)
+  n_properties_to_fit <- n_total_properties - last_fit
 
-n_chains <- as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK"))
-if(is.na(n_chains)) n_chains <- 3
+  for(i in seq_len(n_properties_to_fit)){
 
-message(n_chains, " chains")
+    n_props_fit <- as.numeric(grep("\\d*", files_in_out_dir, value = TRUE))
+    last_fit <- max(n_props_fit)
+    path_last_fit <- file.path(out_dir, last_fit, "modelData.rds")
+    data_last_fit <- read_rds(path_last_fit)
+    data_for_nimble <- get_next_property(data_final, data_last_fit)
 
-inits <- list()
-for(i in seq_len(n_chains)){
-  set.seed(i)
-  inits[[i]] <- nimble_inits(constants, data)
+    prep_and_run_mcmc(informed, out_dir, data_for_nimble, monitors_add, custom_samplers)
+
+  }
+
 }
 
-test_build(modelCode, constants, data, inits[[1]])
-
-params_check <- c(
-  "beta_p",
-  "beta1",
-  "log_gamma",
-  "log_rho",
-  "phi_mu",
-  "psi_phi",
-  "log_nu",
-  "p_mu"
-)
-
-monitors_add <- "N"
-
-custom_samplers <- NULL
-# custom_samplers <- tribble(
-#   ~"node",   ~"type",
-#   "phi_mu",  "slice",
-#   "psi_phi", "slice",
-#   "log_nu",  "slice",
-#   "beta1",   "RW_block"
-# )
-
-# ===================================================
-# Run Nimble in parallel ----
-# ===================================================
 
 
-out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
-np <- constants$n_property
-info <- if_else(informed, "informedPriors", "uninformedPriors")
-np_dir <- file.path("dev", paste0(np, "properties_", info))
-dest <- file.path(out_dir, np_dir)
-if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
-write_rds(data_for_nimble, file.path(dest, "modelData.rds"))
 
-message("Begin Parallel sampling and make cluster")
-cl <- makeCluster(n_chains)
 
-mcmc_parallel(
-  cl = cl,
-  model_code = modelCode,
-  model_constants = constants,
-  model_data = data,
-  model_inits = inits,
-  params_check = params_check,
-  n_iters = config$n_iter,
-  dest = dest,
-  monitors_add = monitors_add,
-  custom_samplers = NULL
-)
 
-stopCluster(cl)
+
+
+
 
