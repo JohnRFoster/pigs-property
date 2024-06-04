@@ -66,7 +66,7 @@ prep_and_run_mcmc <- function(informed, post_path, df, monitors_add, custom_samp
     model_inits = inits,
     params_check = params_check,
     n_iters = config$n_iter,
-    dest = dest,
+    dest = dest_mcmc,
     monitors_add = monitors_add,
     custom_samplers = NULL
   )
