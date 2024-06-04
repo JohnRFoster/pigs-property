@@ -103,6 +103,7 @@ if(first_fit){ # run first fit
     message("==========================================================\n")
 
     prep_and_run_mcmc(informed, post_path, data_for_nimble, monitors_add, custom_samplers)
+    source("R/check_mcmc.R")
 
   }
 
