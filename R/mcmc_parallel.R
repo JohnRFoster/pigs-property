@@ -198,7 +198,8 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   N_unobserved <- clusterEvalQ(cl, subset_N_unobserved()) |> as.matrix()
 
   params_mcmc_list <- as.mcmc.list(lapply(params, as.mcmc))
-  diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15)
+  efsize <- 1000
+  diagnostic <- continue_mcmc(params_mcmc_list, effective_size = efsize, max_psrf = 15)
 
   write_out <- function(p, no, nu, d, c, dest, write_N = FALSE){
 
@@ -252,11 +253,11 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     # every so often we should combine all samples and check convergence
     if(total_iters %% n_iters == 0){
       params_mcmc_list <- collate_mcmc_chunks(dest)$params
-      diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15)
+      diagnostic <- continue_mcmc(params_mcmc_list, effective_size = efsize, max_psrf = 15)
       converged <- all(diagnostic$psrf[, 2] < 1.1)
       write_N <- if_else(converged, TRUE, FALSE)
     } else {
-      diagnostic <- continue_mcmc(params, effective_size = 5000, max_psrf = 15)
+      diagnostic <- continue_mcmc(params, effective_size = efsize, max_psrf = 15)
     }
 
     write_out(params, N_observed, N_unobserved, diagnostic, c, dest, write_N)
