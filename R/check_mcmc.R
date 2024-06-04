@@ -19,15 +19,15 @@ source("R/functions_prep_nimble.R")
 config_name <- "hpc_dev"
 config <- config::get(config = config_name)
 
-out_dir <- "/lustrefs/ceah/feral-swine/property-fits"
-np <- 77
-# np_dir <- file.path("dev", paste0(np, "_properties"))
-np_dir <- "dev/256properties_uninformedPriors"
-# where mcmc chunks are stored
-dest <- file.path(out_dir, np_dir)
+out_dir <- "/lustrefs/ceah/feral-swine/property-fits/iterativeFits"
+files_in_out_dir <- list.files(out_dir)
+n_props_fit <- as.numeric(stringr::str_extract(files_in_out_dir, "\\d*(?=\\D)"))
+last_fit <- max(n_props_fit)
+dest_mcmc <- file.path(out_dir, paste0(last_fit, "_mcmc"))
+dest_posterior <- file.path(out_dir, paste0(last_fit, "_posterior"))
 
 # get samples
-mcmc_list <- collate_mcmc_chunks(dest, start = 25)
+mcmc_list <- collate_mcmc_chunks(dest_mcmc, start = 1)
 params_mcmc_list <- mcmc_list$params
 
 total_iter <- nrow(params_mcmc_list[[1]])
@@ -67,12 +67,7 @@ posterior_samples <- posterior_burnin |>
   slice(draws) |>
   mutate(np = config$np)
 
-# create dir for posterior samples and traceplots
-np_dir <- paste0(np_dir, "_combined")
-out_dest <- file.path(out_dir, np_dir)
-if(!dir.exists(out_dest)) dir.create(out_dest, recursive = TRUE, showWarnings = FALSE)
-
-write_rds(posterior_samples, file.path(out_dest, "posteriorSamples.rds"))
+write_rds(posterior_samples, file.path(dest_posterior, "posteriorSamples.rds"))
 
 # function to create traceplots from thinned posterior
 trace_plot <- function(post, nodes_2_plot, thin = 5000){
@@ -126,7 +121,7 @@ for(i in seq_along(unique(plots$idx))){
 
   gg <- trace_plot(posterior, n2p)
 
-  filename <- file.path(out_dest, paste0("mcmcTimeseries_", sprintf("%03d", i), ".pdf"))
+  filename <- file.path(dest_posterior, paste0("mcmcTimeseries_", sprintf("%03d", i), ".pdf"))
   ggsave(filename, gg)
 
   setTxtProgressBar(pb, i)
@@ -137,7 +132,7 @@ message("Parameters Done")
 
 states_mcmc_list <- mcmc_list$states
 
-data_path <- file.path(dest, "modelData.rds")
+data_path <- file.path(dest_mcmc, "modelData.rds")
 model_data <- read_rds(data_path)
 
 density_stats <- function(mcmc_list, data){
@@ -178,6 +173,6 @@ density_stats <- function(mcmc_list, data){
 }
 
 density <- density_stats(states_mcmc_list, model_data)
-write_rds(density, file.path(out_dest, "densitySummaries.rds"))
+write_rds(density, file.path(dest_posterior, "densitySummaries.rds"))
 
 message("Density Done")

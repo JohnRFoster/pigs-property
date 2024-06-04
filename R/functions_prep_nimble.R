@@ -220,7 +220,8 @@ get_prior_hyperparams <- function(informed, posterior_path = NULL, data_repo = N
 
   if(informed){
 
-    post <- read_rds(posterior_path)
+    rds <- file.path(posterior_path, "posteriorSamples.rds")
+    post <- read_rds(rds)
 
     get_vec <- function(df, node){
       df |>

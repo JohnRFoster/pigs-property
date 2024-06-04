@@ -13,8 +13,6 @@ config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
-source("R/functions_prep_nimble.R")
-source("R/functions_nimble.R")
 source("R/prep_and_run_mcmc.R")
 source("R/iterative_fitting.R")
 
@@ -50,22 +48,24 @@ targets::tar_assert_true(!any(is.na(data_final$c_road_den)))
 targets::tar_assert_true(!any(is.na(data_final$c_rugged)))
 targets::tar_assert_true(!any(is.na(data_final$c_canopy)))
 
-if(dev){
-
-} else {
-  data_for_nimble <- data_final
+print_info <- function(df){
+  message("\n=======================================")
+  fit_properties <- unique(df$agrp_prp_id)
+  message("Total properties in data: ", length(fit_properties))
+  message("Total counties in data: ", length(unique(df$county_code)))
+  message("=======================================\n")
 }
-
-
 
 params_check <- config$params_check
 out_dir <- config$out_dir
-np <- constants$n_property
-
 files_in_out_dir <- list.files(out_dir)
 first_fit <- length(files_in_out_dir) == 0
 
-if(first_fit){
+monitors_add <- "N"
+custom_samplers <- NULL
+
+if(first_fit){ # run first fit
+
   informed <- FALSE
 
   data_for_nimble <- subset_data_for_development(
@@ -76,24 +76,12 @@ if(first_fit){
     properties_include = NULL # properties we want to make sure are in development data
   )
 
-} else {
-  informed <- TRUE
-}
-
-fit_properties <- unique(data_for_nimble$agrp_prp_id)
-message("\nTotal properties in data: ", length(fit_properties))
-message("\nTotal counties in data: ", length(unique(data_for_nimble$county_code)))
-message("\nMethods in data:")
-table(data_for_nimble$method)
-
-
-monitors_add <- "N"
-custom_samplers <- NULL
-post_path <- out_dir
-
-if(first_fit){ # run first fit
+  print_info(data_for_nimble)
   prep_and_run_mcmc(informed, out_dir, data_for_nimble, monitors_add, custom_samplers)
+
 } else { # run iterative fitting
+
+  informed <- TRUE
 
   n_props_fit <- as.numeric(stringr::str_extract(files_in_out_dir, "\\d*(?=\\D)"))
   last_fit <- max(n_props_fit)
@@ -105,11 +93,16 @@ if(first_fit){ # run first fit
 
     n_props_fit <- as.numeric(stringr::str_extract(files_in_out_dir, "\\d*(?=\\D)"))
     last_fit <- max(n_props_fit)
-    path_last_fit <- file.path(out_dir, last_fit, "modelData.rds")
+    post_path <- file.path(out_dir, paste0(last_fit, "_posterior"))
+    path_last_fit <- file.path(post_path, "modelData.rds")
     data_last_fit <- read_rds(path_last_fit)
     data_for_nimble <- get_next_property(data_final, data_last_fit)
 
-    prep_and_run_mcmc(informed, out_dir, data_for_nimble, monitors_add, custom_samplers)
+    message("\n==========================================================")
+    print_info(data_for_nimble)
+    message("==========================================================\n")
+
+    prep_and_run_mcmc(informed, post_path, data_for_nimble, monitors_add, custom_samplers)
 
   }
 

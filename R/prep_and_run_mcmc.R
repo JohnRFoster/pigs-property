@@ -2,20 +2,13 @@
 prep_and_run_mcmc <- function(informed, post_path, df, monitors_add, custom_samplers){
 
   source("R/nimble_removal_model.R")
+  source("R/functions_prep_nimble.R")
+  source("R/functions_nimble.R")
   source("R/mcmc_parallel.R")
 
   # ===================================================
   # Prepare data for NIMBLE ----
   # ===================================================
-
-  constants <- nimble_constants(
-    df,
-    data_litter_size,
-    interval,
-    data_repo,
-    informed,
-    post_path
-  )
 
   # mean litter size year from VerCauteren et al. 2019 pg 63
   data_litter_size <- round(
@@ -24,6 +17,15 @@ prep_and_run_mcmc <- function(informed, post_path, df, monitors_add, custom_samp
       5.6, 5.9, 4.9, 5.1, 4.5, 4.7, 5.3, 5.7, 7.4, 8.4,
       4.7, 4.9, 3.0, 3.0, 4.8, 4.8, 4.2, 5.4, 4.7, 5.2, 5.4
     )
+  )
+
+  constants <- nimble_constants(
+    df,
+    data_litter_size,
+    interval,
+    data_repo,
+    informed,
+    post_path
   )
 
   data <- nimble_data(df, data_litter_size)
@@ -46,9 +48,12 @@ prep_and_run_mcmc <- function(informed, post_path, df, monitors_add, custom_samp
   # ===================================================
 
   np_dir <- length(unique(df$agrp_prp_id))
-  dest <- file.path(out_dir, np_dir)
-  if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
-  write_rds(df, file.path(dest, "modelData.rds"))
+  dest_mcmc <- file.path(out_dir, paste0(np_dir, "_mcmc"))
+  dest_posterior <- file.path(out_dir, paste0(np_dir, "_posterior"))
+  if(!dir.exists(dest_mcmc)) dir.create(dest_mcmc, recursive = TRUE, showWarnings = FALSE)
+  if(!dir.exists(dest_posterior)) dir.create(dest_posterior, recursive = TRUE, showWarnings = FALSE)
+
+  write_rds(df, file.path(dest_posterior, "modelData.rds"))
 
   message("Begin Parallel sampling and make cluster")
   cl <- makeCluster(n_chains)
