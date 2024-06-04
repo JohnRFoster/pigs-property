@@ -85,7 +85,7 @@ if(first_fit){ # run first fit
   informed <- TRUE
 
   n_props_fit <- as.numeric(stringr::str_extract(files_in_out_dir, "\\d*(?=\\D)"))
-  print(n_properties_to_fit)
+  print(n_props_fit)
   last_fit <- max(n_props_fit)
   n_total_properties <- length(unique(data_final$agrp_prp_id))
 
