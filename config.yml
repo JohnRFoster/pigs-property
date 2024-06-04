@@ -13,5 +13,5 @@ default:
 
 hpc_dev:
   data_repo: "/lustrefs/ceah/feral-swine/data"
-  out_dir: "/lustrefs/ceah/feral-swine/property-fits"
+  out_dir: "/lustrefs/ceah/feral-swine/property-fits/iterativeFits"
   n_iter: 50000
