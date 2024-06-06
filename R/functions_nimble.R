@@ -58,7 +58,8 @@ continue_mcmc <- function(mcmc, effective_size, max_psrf){
     done <- FALSE
   }
 
-  if(!done | funky) print(psrf)
+  print(psrf)
+  print(effective_samples)
 
   return(list(
     done = done,
