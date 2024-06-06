@@ -49,11 +49,12 @@ targets::tar_assert_true(!any(is.na(data_final$c_rugged)))
 targets::tar_assert_true(!any(is.na(data_final$c_canopy)))
 
 print_info <- function(df){
-  message("\n=======================================")
+  message("=======================================")
   fit_properties <- unique(df$agrp_prp_id)
   message("Total properties in data: ", length(fit_properties))
   message("Total counties in data: ", length(unique(df$county_code)))
-  message("=======================================\n")
+  message("=======================================:q
+          ")
 }
 
 params_check <- config$params_check
