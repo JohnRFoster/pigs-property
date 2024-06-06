@@ -123,40 +123,49 @@ collate_mcmc_chunks <- function(dest, start = 1){
     store_mcmc[[j]] <- as.matrix(mcmc[[j]])
   }
 
-  # read each mcmc chunk, store each chain from the chunk as a matrix
-  pb <- txtProgressBar(min = 2, max = length(mcmc_dirs), style = 1)
-  for(i in 2:length(mcmc_dirs)){
-    mcmc_rds <- file.path(dest, mcmc_dirs[i], param_file_name)
-    rds <- read_rds(mcmc_rds)
-    mcmc <- rds$params
-    for(j in seq_len(n_chains)){
-      store_mcmc[[j]] <- rbind(store_mcmc[[j]], as.matrix(mcmc[[j]]))
-    }
-
-    state_rds <- file.path(dest, mcmc_dirs[i], state_file_name)
-    if(file.exists(state_rds)){
-
-      mcmc <- read_rds(state_rds)
-
-      if(state_count == 0){
-        for(j in seq_len(n_chains)){
-          store_mcmc_state[[j]] <- as.matrix(mcmc[[j]])
-        }
-      } else {
-        for(j in seq_len(n_chains)){
-          store_mcmc_state[[j]] <- rbind(store_mcmc_state[[j]], as.matrix(mcmc[[j]]))
-        }
+  if(lengh(mcmc_dirs) >= 2){
+    # read each mcmc chunk, store each chain from the chunk as a matrix
+    pb <- txtProgressBar(min = 2, max = length(mcmc_dirs), style = 1)
+    for(i in 2:length(mcmc_dirs)){
+      mcmc_rds <- file.path(dest, mcmc_dirs[i], param_file_name)
+      rds <- read_rds(mcmc_rds)
+      mcmc <- rds$params
+      for(j in seq_len(n_chains)){
+        store_mcmc[[j]] <- rbind(store_mcmc[[j]], as.matrix(mcmc[[j]]))
       }
-      state_count <- 1
-    }
 
-    setTxtProgressBar(pb, i)
+      state_rds <- file.path(dest, mcmc_dirs[i], state_file_name)
+      if(file.exists(state_rds)){
+
+        mcmc <- read_rds(state_rds)
+
+        if(state_count == 0){
+          for(j in seq_len(n_chains)){
+            store_mcmc_state[[j]] <- as.matrix(mcmc[[j]])
+          }
+        } else {
+          for(j in seq_len(n_chains)){
+            store_mcmc_state[[j]] <- rbind(store_mcmc_state[[j]], as.matrix(mcmc[[j]]))
+          }
+        }
+        state_count <- 1
+      }
+
+      setTxtProgressBar(pb, i)
+    }
+    close(pb)
   }
-  close(pb)
+
 
   # need to create an mcmc list object to check for convergence
   params <- as.mcmc.list(lapply(store_mcmc, as.mcmc))
-  states <- as.mcmc.list(lapply(purrr::compact(store_mcmc_state), as.mcmc))
+
+  if(state_count == 1){
+    states <- as.mcmc.list(lapply(purrr::compact(store_mcmc_state), as.mcmc))
+  } else {
+    states <- list()
+  }
+
 
   return(list(params = params, states = states))
 
