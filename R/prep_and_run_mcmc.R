@@ -58,7 +58,7 @@ prep_and_run_mcmc <- function(informed, post_path, df, monitors_add, custom_samp
   message("Begin Parallel sampling and make cluster")
   cl <- makeCluster(n_chains)
 
-  mcmc_parallel(
+  finished <- mcmc_parallel(
     cl = cl,
     model_code = modelCode,
     model_constants = constants,
@@ -72,5 +72,6 @@ prep_and_run_mcmc <- function(informed, post_path, df, monitors_add, custom_samp
   )
 
   stopCluster(cl)
+  return(finished)
 }
 

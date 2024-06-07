@@ -53,8 +53,7 @@ print_info <- function(df){
   fit_properties <- unique(df$agrp_prp_id)
   message("Total properties in data: ", length(fit_properties))
   message("Total counties in data: ", length(unique(df$county_code)))
-  message("=======================================:q
-          ")
+  message("=======================================")
 }
 
 params_check <- config$params_check
@@ -71,13 +70,33 @@ if(first_fit){ # run first fit
 
   data_for_nimble <- subset_data_for_development(
     df = data_final,
-    max_length = 1000,          # maximum time series length (includes unsampled PPs)
-    min_sampled_pp = 0.5,      # minimum number of sampled PPs in time series
-    n_strata = 15,             # number of samples per strata (decile) of environmental covaraites
+    max_length = 50,          # maximum time series length (includes unsampled PPs)
+    min_sampled_pp = 0.4,      # minimum proportion of sampled PPs in time series
+    n_strata = 10,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
 
   print_info(data_for_nimble)
+
+  first_fit_properties <- unique(data_for_nimble$agrp_prp_id)
+  all_properties <- unique(data_final$agrp_prp_id)
+  not_fit_properties <- setdiff(all_properties, first_fit_properties)
+
+  fit_successfully <- tibble(
+    property = first_fit_properties,
+    round = 1,
+    fit = TRUE
+  ) |>
+    bind_rows(
+      tibble(
+        property = not_fit_properties,
+        round = 0,
+        fit = NA
+      )
+    )
+
+  write_rds(fit_successfully, file.path(data_repo, "iterativeFitting.rds"))
+
   prep_and_run_mcmc(informed, out_dir, data_for_nimble, monitors_add, custom_samplers)
 
 } else { # run iterative fitting
@@ -103,8 +122,19 @@ if(first_fit){ # run first fit
     print_info(data_for_nimble)
     message("==========================================================\n")
 
-    prep_and_run_mcmc(informed, post_path, data_for_nimble, monitors_add, custom_samplers)
-    source("R/check_mcmc.R")
+    finished <- prep_and_run_mcmc(informed, post_path, data_for_nimble, monitors_add, custom_samplers)
+
+    prop <- last(data_for_nimble$agrp_prp_id)
+
+    fit_successfully <- read_rds(file.path(data_repo, "iterativeFitting.rds"))
+
+    fit_successfully <- fit_successfully |>
+      mutate(round = if_else(property == prop, i + 1, round),
+             fit = if_else(property == prop, finished, fit))
+
+    write_rds(fit_successfully, file.path(data_repo, "iterativeFitting.rds"))
+
+    if(finished) source("R/check_mcmc.R")
 
   }
 
