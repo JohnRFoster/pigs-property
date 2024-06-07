@@ -124,7 +124,7 @@ collate_mcmc_chunks <- function(dest, start = 1){
     store_mcmc[[j]] <- as.matrix(mcmc[[j]])
   }
 
-  if(lengh(mcmc_dirs) >= 2){
+  if(length(mcmc_dirs) >= 2){
     # read each mcmc chunk, store each chain from the chunk as a matrix
     pb <- txtProgressBar(min = 2, max = length(mcmc_dirs), style = 1)
     for(i in 2:length(mcmc_dirs)){
