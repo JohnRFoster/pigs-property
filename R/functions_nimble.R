@@ -32,7 +32,7 @@ calc_log_potential_area <- nimbleFunction(
 
 
 # figure out if we need to keep sampling
-continue_mcmc <- function(mcmc, effective_size, max_psrf){
+continue_mcmc <- function(mcmc, effective_size, max_psrf, verbose){
   require(coda)
   require(purrr)
 
@@ -58,8 +58,10 @@ continue_mcmc <- function(mcmc, effective_size, max_psrf){
     done <- FALSE
   }
 
-  print(psrf)
-  print(effective_samples)
+  if(verbose){
+    print(psrf)
+    print(effective_samples)
+  }
 
   return(list(
     done = done,
