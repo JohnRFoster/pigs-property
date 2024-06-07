@@ -103,7 +103,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     Rmcmc <- buildMCMC(mcmcConf)
     Cmodel <- compileNimble(Rmodel)
     Cmcmc <<- compileNimble(Rmcmc) # need to define this in the global environment to continue mcmc
-    Cmcmc$run(niter = 1000, nburnin = 0)
+    Cmcmc$run(niter = 1000, nburnin = 0, thin = 10)
     samples <- as.matrix(Cmcmc$mvSamples)
     return(samples)
 
@@ -114,7 +114,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
   continue_sampling <- function(){
     require(nimble)
     require(coda)
-    Cmcmc$run(niter = n_iters, reset = FALSE, resetMV = TRUE)
+    Cmcmc$run(niter = n_iters, reset = FALSE, resetMV = TRUE, thin = 10)
     samples <<- as.matrix(Cmcmc$mvSamples) # need to define this in the global environment to use in subset_mcmc
     return(samples)
   }
@@ -199,31 +199,35 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
   params_mcmc_list <- as.mcmc.list(lapply(params, as.mcmc))
   efsize <- 1000
-  diagnostic <- continue_mcmc(params_mcmc_list, effective_size = efsize, max_psrf = 15)
+  diagnostic <- continue_mcmc(params_mcmc_list, effective_size = efsize, max_psrf = 15, verbose = TRUE)
 
-  write_out <- function(p, no, nu, d, c, dest, write_N = FALSE){
+  c_dir <- sprintf("%04d", c)
+  path <- file.path(dest, c_dir)
+  if(!dir.exists(path)) dir.create(path, showWarnings = FALSE, recursive = TRUE)
 
-    c_dir <- sprintf("%04d", c)
-    path <- file.path(dest, c_dir)
-    if(!dir.exists(path)) dir.create(path, showWarnings = FALSE, recursive = TRUE)
-
+  write_out_p <- function(p, d, dest){
     f <- "paramSamples.rds"
     write_rds(list(params = p,
                    diagnostic = d),
-              file.path(path, f))
+              file.path(dest, f))
+  }
 
-    converged <- all(d$psrf[, 2] < 1.1)
-    if(converged | write_N){
-      f <- "observedAbundanceSamples.rds"
-      write_rds(no, file.path(path, f))
+  write_abundnace <- function(no, nu, dest){
 
-      f <- "unobservedAbundanceQuantiles.rds"
-      write_rds(nu, file.path(path, f))
-    }
+    f <- "observedAbundanceSamples.rds"
+    write_rds(no, file.path(dest, f))
+
+    f <- "unobservedAbundanceQuantiles.rds"
+    write_rds(nu, file.path(dest, f))
 
   }
 
-  write_out(params, N_observed, N_unobserved, diagnostic, c, dest)
+  write_out_p(params, diagnostic, path)
+
+  converged <- all(d$psrf[, 2] < 1.1)
+  if(converged){
+    write_abundnace(N_observed, N_unobserved, dest)
+  }
 
   continue <- !diagnostic$done
   write_N <- FALSE
@@ -245,22 +249,25 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     params <- clusterEvalQ(cl, subset_params())
     params <- as.mcmc.list(lapply(params, as.mcmc))
 
+    c_dir <- sprintf("%04d", c)
+    path <- file.path(dest, c_dir)
+    if(!dir.exists(path)) dir.create(path, showWarnings = FALSE, recursive = TRUE)
+
+    diagnostic <- NULL
+    write_out_p(params, diagnostic, path)
+
     N_observed <- clusterEvalQ(cl, subset_N_observed())
     N_observed <- as.mcmc.list(lapply(N_observed, as.mcmc))
-
     N_unobserved <- clusterEvalQ(cl, subset_N_unobserved()) |> as.matrix()
 
-    # every so often we should combine all samples and check convergence
-    if(total_iters %% n_iters == 0){
-      params_mcmc_list <- collate_mcmc_chunks(dest)$params
-      diagnostic <- continue_mcmc(params_mcmc_list, effective_size = efsize, max_psrf = 15)
-      converged <- all(diagnostic$psrf[, 2] < 1.1)
-      write_N <- if_else(converged, TRUE, FALSE)
-    } else {
-      diagnostic <- continue_mcmc(params, effective_size = efsize, max_psrf = 15)
-    }
+    params_mcmc_list <- collate_mcmc_chunks(dest)$params
+    diagnostic <- continue_mcmc(params_mcmc_list, effective_size = efsize, max_psrf = 15, verbose = TRUE)
+    converged <- all(diagnostic$psrf[, 2] < 1.1)
+    write_N <- if_else(converged, TRUE, FALSE)
 
-    write_out(params, N_observed, N_unobserved, diagnostic, c, dest, write_N)
+    if(converged | write_N){
+      write_abundnace(N_observed, N_unobserved, dest)
+    }
 
     continue <- !diagnostic$done
     message("=================================================")
