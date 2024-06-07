@@ -127,8 +127,13 @@ collate_mcmc_chunks <- function(dest, start = 1){
   }
 
   if(length(mcmc_dirs) >= 2){
+
+    use_pb <- if_else(length(mcmc_dirs) == 2, FALSE, TRUE)
+    if(use_pb){
+      pb <- txtProgressBar(min = 2, max = length(mcmc_dirs), style = 1)
+    }
+
     # read each mcmc chunk, store each chain from the chunk as a matrix
-    pb <- txtProgressBar(min = 2, max = length(mcmc_dirs), style = 1)
     for(i in 2:length(mcmc_dirs)){
       mcmc_rds <- file.path(dest, mcmc_dirs[i], param_file_name)
       rds <- read_rds(mcmc_rds)
@@ -153,10 +158,9 @@ collate_mcmc_chunks <- function(dest, start = 1){
         }
         state_count <- 1
       }
-
-      setTxtProgressBar(pb, i)
+      if(use_pb) setTxtProgressBar(pb, i)
     }
-    close(pb)
+    if(use_pb) close(pb)
   }
 
 
