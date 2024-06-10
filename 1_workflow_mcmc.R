@@ -145,11 +145,11 @@ if(first_fit){ # run first fit
     fit_successfully <- read_rds(file.path(data_repo, "iterativeFitting.rds"))
     good_fits <- fit_successfully |> filter(fit)
 
-    last_good_fit <- good_fits |>
+    post_path <- good_fits |>
       filter(round == max(round)) |>
       pull(dir) |>
-      unique() |>
-      basename()
+      unique()
+    last_good_fit <- basename(post_path)
 
     data_last_fit <- read_rds(file.path(out_dir, last_good_fit, "modelData.rds"))
     data_for_nimble <- get_next_property(data_final, data_last_fit)
