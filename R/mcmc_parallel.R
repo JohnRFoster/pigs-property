@@ -266,7 +266,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
     write_N <- if_else(converged, TRUE, FALSE)
 
     if(converged | write_N){
-      write_abundnace(N_observed, N_unobserved, dest)
+      write_abundnace(N_observed, N_unobserved, path)
     }
 
     continue <- !diagnostic$done
