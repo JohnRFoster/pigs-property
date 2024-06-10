@@ -1,5 +1,6 @@
 
-prep_and_run_mcmc <- function(informed, post_path, df, monitors_add, custom_samplers){
+prep_and_run_mcmc <- function(informed, post_path, data_repo, dest_mcmc,
+                              dest_posterior, df, monitors_add, custom_samplers){
 
   source("R/nimble_removal_model.R")
   source("R/functions_prep_nimble.R")
@@ -47,9 +48,6 @@ prep_and_run_mcmc <- function(informed, post_path, df, monitors_add, custom_samp
   # Run Nimble in parallel ----
   # ===================================================
 
-  np_dir <- length(unique(df$agrp_prp_id))
-  dest_mcmc <- file.path(out_dir, paste0(np_dir, "_mcmc"))
-  dest_posterior <- file.path(out_dir, paste0(np_dir, "_posterior"))
   if(!dir.exists(dest_mcmc)) dir.create(dest_mcmc, recursive = TRUE, showWarnings = FALSE)
   if(!dir.exists(dest_posterior)) dir.create(dest_posterior, recursive = TRUE, showWarnings = FALSE)
 
