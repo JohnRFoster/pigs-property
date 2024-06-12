@@ -226,7 +226,7 @@ mcmc_parallel <- function(cl, model_code, model_constants, model_data, model_ini
 
   converged <- all(diagnostic$psrf[, 2] < 1.1)
   if(converged){
-    write_abundnace(N_observed, N_unobserved, dest)
+    write_abundnace(N_observed, N_unobserved, path)
   }
 
   continue <- !diagnostic$done
