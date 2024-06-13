@@ -105,15 +105,17 @@ if(first_fit){ # run first fit
 
   write_rds(fit_successfully, file.path(data_repo, "iterativeFitting.rds"))
 
-  prep_and_run_mcmc(
+  finished <- prep_and_run_mcmc(
     informed,
-    out_dir,
+    post_path,
     data_repo,
     dest_mcmc,
     dest_posterior,
     data_for_nimble,
     monitors_add,
     custom_samplers)
+
+  if(finished) source("R/check_mcmc.R")
 
 } else { # run iterative fitting
 
