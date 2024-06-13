@@ -115,7 +115,7 @@ if(first_fit){ # run first fit
     monitors_add,
     custom_samplers)
 
-  if(finished) source("R/check_mcmc.R")
+  source("R/check_mcmc.R")
 
 } else { # run iterative fitting
 
