@@ -39,7 +39,7 @@ if(is.na(burnin)) burnin <- round(total_iter / 2)
 params_burnin <- window(params_mcmc_list, start = burnin)
 
 # calculate psrf (convergence stat) and effective sample size
-diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 5000, max_psrf = 15, verbose = TRUE)
+diagnostic <- continue_mcmc(params_mcmc_list, effective_size = 1000, max_psrf = 15, verbose = TRUE)
 
 # X11 is not on the HPC, so need to use ggplot2 to create traceplots
 # which means we need to create a tibble of samples and identify chains and iterations
