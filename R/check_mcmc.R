@@ -132,7 +132,7 @@ message("Parameters Done")
 
 states_mcmc_list <- mcmc_list$states
 
-data_path <- file.path(dest_mcmc, "modelData.rds")
+data_path <- file.path(dest_posterior, "modelData.rds")
 model_data <- read_rds(data_path)
 
 density_stats <- function(mcmc_list, data){
