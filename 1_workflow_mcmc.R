@@ -107,7 +107,7 @@ if(first_fit){ # run first fit
 
   finished <- prep_and_run_mcmc(
     informed,
-    post_path,
+    NULL,
     data_repo,
     dest_mcmc,
     dest_posterior,
