@@ -276,11 +276,11 @@ get_prior_hyperparams <- function(informed, posterior_path = NULL, data_repo = N
 
     hyperparams <- list(
       log_rho_mu = rep(0, 5),
-      log_rho_tau = rep(0.1, 5),
+      log_rho_tau = c(1, 1, 1, 3, 3),
       p_mu_mu = rep(0, 2),
       p_mu_tau = rep(1, 2),
       log_gamma_mu = rep(0, 2),
-      log_gamma_tau = rep(0.1, 2),
+      log_gamma_tau = rep(3, 2),
       beta1_mu = rep(0, 5),
       beta1_tau = rep(1, 5),
       beta_p_mu = rep(0, 15),
