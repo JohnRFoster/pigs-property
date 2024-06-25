@@ -200,20 +200,23 @@ get_ts_length <- function(df){
 get_n_observations <- function(df, good_props){
   df |>
     filter(agrp_prp_id %in% good_props) |>
-    select(agrp_prp_id, primary_period) |>
-    distinct() |>
+    group_by(agrp_prp_id, primary_period) |>
+    summarise(take = sum(take)) |>
+    ungroup() |>
+    filter(take > 0) |>
     group_by(agrp_prp_id) |>
     count()
 }
 
-subset_data_for_development <- function(df, max_length, min_sampled_pp, n_strata, properties_include = NULL){
+subset_data_for_development <- function(df, min_length, max_length, min_sampled_pp, n_strata, properties_include = NULL){
 
   require(rsample)
   set.seed(753)
 
   # get properties that have a total time series length of 50 primary periods or less
   ts_length <- get_ts_length(df) |>
-    filter(delta <= max_length)
+    filter(delta <= max_length,
+           delta >= min_length)
 
   good_props <- ts_length |> pull(agrp_prp_id) |> unique()
 
@@ -222,7 +225,7 @@ subset_data_for_development <- function(df, max_length, min_sampled_pp, n_strata
 
   good_ts <- left_join(ts_length, n_obs) |>
     mutate(precent_obs = n / delta) |>
-    filter(precent_obs >= min_sampled_pp) |>
+    filter(precent_obs > min_sampled_pp) |>
     pull(agrp_prp_id)
 
   # create strata by decile
