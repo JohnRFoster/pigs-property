@@ -72,8 +72,8 @@ if(first_fit){ # run first fit
     df = data_final,
     min_length = 2,          # minimum time series length (includes unsampled PPs)
     max_length = 50,          # maximum time series length (includes unsampled PPs)
-    min_sampled_pp = 0.5,      # minimum proportion of sampled PPs in time series
-    n_strata = 10,             # number of samples per strata (decile) of environmental covaraites
+    min_sampled_pp = 0.6,      # minimum proportion of sampled PPs in time series
+    n_strata = 30,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
 
