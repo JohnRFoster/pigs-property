@@ -9,7 +9,7 @@ library(tidyr)
 library(readr)
 library(parallel)
 
-config_name <- "default"
+config_name <- "hpc_dev"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -54,13 +54,22 @@ farm_bill_properties <- data_farm_bill |>
 
 data_final <- left_join(data_join2, farm_bill_properties)
 
+
 print_info <- function(df){
+  fit_properties <- length(unique(df$agrp_prp_id))
+  nfb <- df |>
+    filter(farm_bill == 1) |>
+    pull(agrp_prp_id) |>
+    unique() |>
+    length()
   message("=======================================")
-  fit_properties <- unique(df$agrp_prp_id)
-  message("Total properties in data: ", length(fit_properties))
+  message("Total properties in data: ", fit_properties)
+  message("Total Farm Bill properties in data: ", nfb)
   message("Total counties in data: ", length(unique(df$county_code)))
   message("=======================================")
 }
+
+print_info(data_final)
 
 params_check <- config$params_check
 out_dir <- config$out_dir
@@ -77,8 +86,8 @@ if(first_fit){ # run first fit
   data_for_nimble <- subset_data_for_development(
     df = data_final,
     min_length = 2,          # minimum time series length (includes unsampled PPs)
-    max_length = 50,          # maximum time series length (includes unsampled PPs)
-    min_sampled_pp = 0.6,      # minimum proportion of sampled PPs in time series
+    max_length = 500,          # maximum time series length (includes unsampled PPs)
+    min_sampled_pp = 0.4,      # minimum proportion of sampled PPs in time series
     n_strata = 30,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
