@@ -170,8 +170,8 @@ county_codes <- function(df){
            countyfp = ifelse(cnty_name == "HUMBOLDT (E)", "013", countyfp),
            county_code = as.numeric(paste0(statefp, countyfp)),
            county_code = sprintf("%05d", county_code)) |> # need this for joining downstream
-    select(agrp_prp_id, st_name, cnty_name, county_code, method, trap_count, take,
-           property_area_km2, effort, effort_per, timestep, order, n_survey, p) |>
+    select(agrp_prp_id, alws_agrprop_id, st_name, cnty_name, county_code, method, trap_count,
+           take, property_area_km2, effort, effort_per, timestep, order, n_survey, p) |>
     rename(primary_period = timestep) |>
     mutate(property = as.numeric(as.factor(agrp_prp_id)),
            county = as.numeric(as.factor(county_code)))
