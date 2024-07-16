@@ -326,8 +326,6 @@ nimble_constants <- function(df, data_ls, interval, data_repo, informed, posteri
     beta_p_row = rep(1:n_method, each = ncol(X)),
     beta_p_col = rep(1:ncol(X), n_method),
     n_time_prop = n_time_prop,
-    # n_trap_snare = length(trap_snare_idx),
-    # n_shooting = length(shooting_idx),
     nH = nH,
     nH_p = nH_p,
     N_full_unique = N_full_unique,
@@ -336,8 +334,6 @@ nimble_constants <- function(df, data_ls, interval, data_repo, informed, posteri
     log_pi = log(pi),
     first_survey = which(df$order == 1),
     not_first_survey = which(df$order != 1),
-    # trap_snare_idx = trap_snare_idx,
-    # shooting_idx = shooting_idx,
     m_p = ncol(X),
     start = start_end$start,
     end = start_end$end,
@@ -358,6 +354,13 @@ nimble_data <- function(df, data_ls){
   X <- create_X(df)
   y_sum <- removed_in_pp_cumsum(df)
 
+  # need these for inits
+  unique_log_areas <- df |>
+    select(agrp_prp_id, property_area_km2) |>
+    distinct() |>
+    pull(property_area_km2) |>
+    log()
+
   list(
     y = df$take,
     y_sum = y_sum,
@@ -366,7 +369,8 @@ nimble_data <- function(df, data_ls){
     effort_per = df$effort_per,
     log_effort_per = log(df$effort_per),
     n_trap_m1 = df$trap_count - 1,
-    log_survey_area_km2 = log(df$property_area_km2)
+    log_survey_area_km2 = log(df$property_area_km2),
+    unique_log_areas = unique_log_areas
   )
 }
 
@@ -396,7 +400,8 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 500){
     N <- phi <- lambda <- rep(NA, max(nH, na.rm = TRUE))
     n_init <- rep(NA, n_property)
     for(i in 1:n_property){
-      n_init[i] <- round(exp(log_survey_area_km2[i]) * 5) + sum(rem[i, ], na.rm = TRUE) * 2
+      n_init[i] <- round(exp(unique_log_areas[i])) + sum(rem[i, ], na.rm = TRUE) * 2
+      if(n_init[i] > 5000) n_init[i] <- rpois(1, 500)
       N[nH[i, 1]] <- n_init[i]
       for(j in 2:n_time_prop[i]){
         phi[nH[i, j-1]] <- rbeta(1, a, b)
@@ -457,7 +462,7 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
   log_gamma <- get_vec(init, "log_gamma")
   log_rho <- get_vec(init, "log_rho")
 
-  log_survey_area_km2 <- data$log_survey_area_km2
+  unique_log_areas <- data$unique_log_areas
   rem <- constants$rem
   n_property <- constants$n_property
   nH <- constants$nH
@@ -471,7 +476,8 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
   N <- phi <- lambda <- rep(NA, max(nH, na.rm = TRUE))
   n_init <- rep(NA, n_property)
   for(i in 1:n_property){
-    n_init[i] <- round(exp(log_survey_area_km2[i]) * 5) + sum(rem[i, ], na.rm = TRUE) * 2
+    n_init[i] <- round(exp(unique_log_areas[i])) + sum(rem[i, ], na.rm = TRUE) * 2
+    if(n_init[i] > 5000) n_init[i] <- rpois(1, 500)
     N[nH[i, 1]] <- n_init[i]
     for(j in 2:n_time_prop[i]){
       phi[nH[i, j-1]] <- rbeta(1, a, b)

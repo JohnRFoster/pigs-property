@@ -42,7 +42,7 @@ prep_and_run_mcmc <- function(informed, post_path, data_repo, dest_mcmc,
     inits[[i]] <- nimble_inits(constants, data)
   }
 
-  test_build(modelCode, constants, data, inits[[1]])
+  test_build(modelCode, constants, data, inits = inits[[1]])
 
   # ===================================================
   # Run Nimble in parallel ----
