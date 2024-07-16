@@ -9,7 +9,7 @@ library(tidyr)
 library(readr)
 library(parallel)
 
-config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -27,9 +27,6 @@ file <- file.path(data_repo, config$file_mis)
 interval <- config$interval
 dev <- config$dev
 
-# data_farm_bill <- read_csv(file.path(data_repo, "All_FB_Agreements.csv"))
-# farm_bill_properties <- data_farm_bill |> pull(`AGR ID`)
-
 data_mis <- get_data(file, interval)
 
 ## observation covariates ----
@@ -41,12 +38,21 @@ data_join <- left_join(data_mis, data_obs,
                        by = join_by(county_code))
 
 ## filter missing states ----
-data_final <- data_join |>
+data_join2 <- data_join |>
   filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS"))
 
-targets::tar_assert_true(!any(is.na(data_final$c_road_den)))
-targets::tar_assert_true(!any(is.na(data_final$c_rugged)))
-targets::tar_assert_true(!any(is.na(data_final$c_canopy)))
+targets::tar_assert_true(!any(is.na(data_join2$c_road_den)))
+targets::tar_assert_true(!any(is.na(data_join2$c_rugged)))
+targets::tar_assert_true(!any(is.na(data_join2$c_canopy)))
+
+## join with farm bill properties ----
+data_farm_bill <- read_csv(file.path(data_repo, "All_FB_Agreements_long_2024-05-30.csv"))
+farm_bill_properties <- data_farm_bill |>
+  rename(alws_agrprop_id = propertyID) |>
+  select(-agreement_name, -property_name) |>
+  mutate(farm_bill = 1)
+
+data_final <- left_join(data_join2, farm_bill_properties)
 
 print_info <- function(df){
   message("=======================================")
