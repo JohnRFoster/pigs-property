@@ -304,6 +304,7 @@ create_timestep_df <- function(df){
 
 get_data <- function(file, interval){
   all_take <- read_csv(file, show_col_types = FALSE) |>
+    filter(start.date >= lubridate::ymd("2014-01-01")) |>
     mutate(cnty_name = if_else(grepl("ST ", cnty_name), gsub("ST ", "ST. ", cnty_name), cnty_name),
            cnty_name = if_else(grepl("KERN", cnty_name), "KERN", cnty_name))
 
