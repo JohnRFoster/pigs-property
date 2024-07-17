@@ -86,14 +86,17 @@ if(first_fit){ # run first fit
   data_for_nimble <- subset_data_for_development(
     df = data_final,
     min_length = 3,          # minimum time series length (includes unsampled PPs)
-    max_length = 500,          # maximum time series length (includes unsampled PPs)
+    max_length = 50,          # maximum time series length (includes unsampled PPs)
     min_sampled_pp = 0.35,      # minimum proportion of sampled PPs in time series
     n_strata = 30,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
 
   print_info(data_for_nimble)
-  print(table(data_for_nimble$method))
+  data_for_nimble |>
+    group_by(method) |>
+    summarise(n = n(),
+              take = sum(take)) |> print()
 
   first_fit_properties <- unique(data_for_nimble$agrp_prp_id)
   all_properties <- unique(data_final$agrp_prp_id)
