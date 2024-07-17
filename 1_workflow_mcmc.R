@@ -85,14 +85,15 @@ if(first_fit){ # run first fit
 
   data_for_nimble <- subset_data_for_development(
     df = data_final,
-    min_length = 2,          # minimum time series length (includes unsampled PPs)
-    max_length = 50,          # maximum time series length (includes unsampled PPs)
-    min_sampled_pp = 0.5,      # minimum proportion of sampled PPs in time series
+    min_length = 3,          # minimum time series length (includes unsampled PPs)
+    max_length = 500,          # maximum time series length (includes unsampled PPs)
+    min_sampled_pp = 0.35,      # minimum proportion of sampled PPs in time series
     n_strata = 30,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
 
   print_info(data_for_nimble)
+  print(table(data_for_nimble$method))
 
   first_fit_properties <- unique(data_for_nimble$agrp_prp_id)
   all_properties <- unique(data_final$agrp_prp_id)
@@ -180,6 +181,7 @@ if(first_fit){ # run first fit
     dest_mcmc <- file.path(out_dir, paste0(i, "_mcmc"))
     dest_posterior <- file.path(out_dir, paste0(i, "_posterior"))
 
+    data_for_nimble <- data_for_nimble |> arrange(agrp_prp_id, )
     finished <- prep_and_run_mcmc(
       informed,
       post_path,
