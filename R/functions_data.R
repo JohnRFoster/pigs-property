@@ -268,7 +268,9 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
   message("Number of properties in each road density strata:")
   print(table(df_sample$road_den_strata))
 
-  new_data <- df |> filter(agrp_prp_id %in% props)
+  new_data <- df |>
+    filter(agrp_prp_id %in% props) |>
+    mutate(primary_period = primary_period - min(primary_period) + 1)
   return(new_data)
 }
 
@@ -318,7 +320,8 @@ get_data <- function(file, interval){
     rename(method = cmp_name,
            trap_count = cmp.qty) |>
     select(-wt_work_date, -hours, -cmp.hours, -cmp.days) |>
-    distinct()
+    distinct() |>
+    arrange(agrp_prp_id, start.date, end.date)
 
   # create PP of length [interval]
   data_timestep <- create_primary_periods(data_mis, interval) |>
