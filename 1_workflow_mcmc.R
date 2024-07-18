@@ -87,7 +87,7 @@ if(first_fit){ # run first fit
     df = data_final,
     min_length = 3,          # minimum time series length (includes unsampled PPs)
     max_length = 50,          # maximum time series length (includes unsampled PPs)
-    min_sampled_pp = 0.35,      # minimum proportion of sampled PPs in time series
+    min_sampled_pp = 0.3,      # minimum proportion of sampled PPs in time series
     n_strata = 30,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
@@ -184,7 +184,6 @@ if(first_fit){ # run first fit
     dest_mcmc <- file.path(out_dir, paste0(i, "_mcmc"))
     dest_posterior <- file.path(out_dir, paste0(i, "_posterior"))
 
-    data_for_nimble <- data_for_nimble |> arrange(agrp_prp_id, )
     finished <- prep_and_run_mcmc(
       informed,
       post_path,
