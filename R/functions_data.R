@@ -309,7 +309,7 @@ get_data <- function(file, interval){
            cnty_name = if_else(grepl("KERN", cnty_name), "KERN", cnty_name))
 
   data_mis <- all_take |>
-    mutate(property_area_km2 = property.size / 247.1) |>
+    mutate(property_area_km2 = round(property.size * 0.00404686, 2)) |>
     filter(property_area_km2 >= 1.8,
            st_name != "HAWAII") |>
     mutate(effort = if_else(cmp_name %in% c("TRAPS, CAGE", "SNARE"), cmp.days, cmp.hours),
