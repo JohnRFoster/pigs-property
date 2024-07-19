@@ -52,13 +52,21 @@ farm_bill_properties <- data_farm_bill |>
   select(-agreement_name, -property_name) |>
   mutate(farm_bill = 1)
 
-data_final <- left_join(data_join2, farm_bill_properties)
+data_final <- left_join(data_join2, farm_bill_properties) |>
+  mutate(property = as.numeric(as.factor(propertyID)),
+         county = as.numeric(as.factor(county_code)))
+
+data_final |>
+  filter(farm_bill == 1) |>
+  pull(propertyID) |>
+  unique() |>
+  length()
 
 print_info <- function(df){
-  fit_properties <- length(unique(df$agrp_prp_id))
+  fit_properties <- length(unique(df$propertyID))
   nfb <- df |>
     filter(farm_bill == 1) |>
-    pull(agrp_prp_id) |>
+    pull(propertyID) |>
     unique() |>
     length()
   message("=======================================")
@@ -98,8 +106,8 @@ if(first_fit){ # run first fit
     summarise(n = n(),
               take = sum(take)) |> print()
 
-  first_fit_properties <- unique(data_for_nimble$agrp_prp_id)
-  all_properties <- unique(data_final$agrp_prp_id)
+  first_fit_properties <- unique(data_for_nimble$propertyID)
+  all_properties <- unique(data_final$propertyID)
   not_fit_properties <- setdiff(all_properties, first_fit_properties)
 
   np <- length(first_fit_properties)
@@ -151,8 +159,8 @@ if(first_fit){ # run first fit
     basename()
 
   last_fit <- read_rds(file.path(out_dir, last_good_fit, "modelData.rds"))
-  n_total_properties <- length(unique(data_final$agrp_prp_id))
-  n_properties_to_fit <- n_total_properties - length(unique(last_fit$agrp_prp_id))
+  n_total_properties <- length(unique(data_final$propertyID))
+  n_properties_to_fit <- n_total_properties - length(unique(last_fit$propertyID))
 
   start <- good_fits |>
     pull(round) |>
@@ -180,7 +188,7 @@ if(first_fit){ # run first fit
     print_info(data_for_nimble)
     message("==========================================================\n")
 
-    np <- length(data_for_nimble$agrp_prp_id)
+    np <- length(data_for_nimble$propertyID)
     dest_mcmc <- file.path(out_dir, paste0(i, "_mcmc"))
     dest_posterior <- file.path(out_dir, paste0(i, "_posterior"))
 
@@ -194,7 +202,7 @@ if(first_fit){ # run first fit
       monitors_add,
       custom_samplers)
 
-    prop <- last(data_for_nimble$agrp_prp_id)
+    prop <- last(data_for_nimble$propertyID)
 
     fit_successfully <- fit_successfully |>
       mutate(round = if_else(property == prop, i, round),

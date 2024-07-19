@@ -356,7 +356,7 @@ nimble_data <- function(df, data_ls){
 
   # need these for inits
   unique_log_areas <- df |>
-    select(agrp_prp_id, property_area_km2) |>
+    select(propertyID, property_area_km2) |>
     distinct() |>
     pull(property_area_km2) |>
     log()

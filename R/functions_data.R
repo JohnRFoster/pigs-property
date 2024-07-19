@@ -39,15 +39,15 @@ create_primary_periods <- function(df, interval) {
 
   df |>
     filter(!is.na(timestep)) |>
-    arrange(agrp_prp_id, timestep)
+    arrange(propertyID, timestep)
 
 }
 
 # resolve duplicate property values - when there are multiple values, take max
 resolve_duplicate <- function(insitu_data){
   property_areas <- insitu_data |>
-    distinct(agrp_prp_id, property_area_km2) |>
-    group_by(agrp_prp_id) |>
+    distinct(propertyID, property_area_km2) |>
+    group_by(propertyID) |>
     summarize(n_areas = length(unique(property_area_km2)),
               property_area_max = max(property_area_km2, na.rm = TRUE),
               # properties with all NA areas get -Inf
@@ -58,7 +58,7 @@ resolve_duplicate <- function(insitu_data){
     ungroup()
 
   insitu_data |>
-    left_join(property_areas, by = join_by(agrp_prp_id, property_area_km2)) |>
+    left_join(property_areas, by = join_by(propertyID, property_area_km2)) |>
     filter(!is.na(property_area_km2),
            property_area_km2 >= 1.8,
            effort > 0)
@@ -68,35 +68,35 @@ resolve_duplicate <- function(insitu_data){
 # and there are at least 2 timesteps for each property
 dynamic_filter <- function(df){
   good_events <- df |>
-    select(agrp_prp_id, timestep) |>
-    group_by(agrp_prp_id, timestep) |>
+    select(propertyID, timestep) |>
+    group_by(propertyID, timestep) |>
     mutate(two_plus_takes = n() >= 2) |>
     filter(two_plus_takes) |>
-    group_by(agrp_prp_id) |>
-    arrange(agrp_prp_id, timestep) |>
+    group_by(propertyID) |>
+    arrange(propertyID, timestep) |>
     unique() |>
     mutate(n_timesteps = length(unique(timestep))) |>
     filter(n_timesteps >= 2) |>
     ungroup() |>
-    mutate(event_id = paste0(agrp_prp_id, "-", timestep)) |>
+    mutate(event_id = paste0(propertyID, "-", timestep)) |>
     pull(event_id)
 
   df |>
-    mutate(event_id = paste0(agrp_prp_id, "-", timestep)) |>
+    mutate(event_id = paste0(propertyID, "-", timestep)) |>
     filter(event_id %in% good_events) |>
-    arrange(agrp_prp_id, timestep)
+    arrange(propertyID, timestep)
 
 }
 
 take_filter <- function(df){
   zero_take_prp <- df |>
-    group_by(agrp_prp_id) |>
+    group_by(propertyID) |>
     summarise(sum_take = sum(take)) |>
     ungroup() |>
     filter(sum_take == 0) |>
-    pull(agrp_prp_id)
+    pull(propertyID)
 
-  df |> filter(!agrp_prp_id %in% zero_take_prp)
+  df |> filter(!propertyID %in% zero_take_prp)
 
 }
 
@@ -118,10 +118,10 @@ order_interval <- function(df){
 order_stochastic <- function(order.df){
 
   n_methods_mid <- order.df |>
-    select(agrp_prp_id, midpoint, method) |>
-    group_by(agrp_prp_id, midpoint) |>
+    select(propertyID, midpoint, method) |>
+    group_by(propertyID, midpoint) |>
     count() |>
-    arrange(agrp_prp_id, midpoint)
+    arrange(propertyID, midpoint)
 
   set.seed(8)
 
@@ -146,13 +146,13 @@ order_stochastic <- function(order.df){
 order_of_events <- function(order_df){
   df <- order_df |>
     ungroup() |>
-    group_by(agrp_prp_id, timestep) |>
+    group_by(propertyID, timestep) |>
     mutate(order = order(jittered_midpoint),
            has_multi = any(order > 1),
            any_ties = any(duplicated(jittered_midpoint)),
            n_survey = n()) |>
     ungroup() |>
-    arrange(agrp_prp_id, timestep, order) |>
+    arrange(propertyID, timestep, order) |>
     mutate(p = 1:n())
 
   targets::tar_assert_true(all(df$has_multi))
@@ -170,11 +170,9 @@ county_codes <- function(df){
            countyfp = ifelse(cnty_name == "HUMBOLDT (E)", "013", countyfp),
            county_code = as.numeric(paste0(statefp, countyfp)),
            county_code = sprintf("%05d", county_code)) |> # need this for joining downstream
-    select(agrp_prp_id, alws_agrprop_id, st_name, cnty_name, county_code, method, trap_count,
+    select(propertyID, agrp_prp_id, alws_agrprop_id, st_name, cnty_name, county_code, method, trap_count,
            take, property_area_km2, effort, effort_per, timestep, order, n_survey, p) |>
-    rename(primary_period = timestep) |>
-    mutate(property = as.numeric(as.factor(agrp_prp_id)),
-           county = as.numeric(as.factor(county_code)))
+    rename(primary_period = timestep)
 }
 
 get_fips <- function(file = "data/fips/national_county.txt"){
@@ -187,9 +185,9 @@ get_fips <- function(file = "data/fips/national_county.txt"){
 get_ts_length <- function(df){
   df |>
     filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS")) |>
-    select(agrp_prp_id, primary_period) |>
+    select(propertyID, primary_period) |>
     distinct() |>
-    group_by(agrp_prp_id) |>
+    group_by(propertyID) |>
     filter(primary_period == min(primary_period) |
              primary_period == max(primary_period)) |>
     mutate(delta = c(0, diff(primary_period) + 1)) |>
@@ -199,12 +197,12 @@ get_ts_length <- function(df){
 
 get_n_observations <- function(df, good_props){
   df |>
-    filter(agrp_prp_id %in% good_props) |>
-    group_by(agrp_prp_id, primary_period) |>
+    filter(propertyID %in% good_props) |>
+    group_by(propertyID, primary_period) |>
     summarise(take = sum(take)) |>
     ungroup() |>
     filter(take > 0) |>
-    group_by(agrp_prp_id) |>
+    group_by(propertyID) |>
     count()
 }
 
@@ -218,7 +216,7 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
     filter(delta <= max_length,
            delta >= min_length)
 
-  good_props <- ts_length |> pull(agrp_prp_id) |> unique()
+  good_props <- ts_length |> pull(propertyID) |> unique()
 
   # given the properties identified above, subset to those that have at least n observed primary periods
   n_obs <- get_n_observations(df, good_props)
@@ -226,7 +224,7 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
   good_ts <- left_join(ts_length, n_obs) |>
     mutate(precent_obs = n / delta) |>
     filter(precent_obs > min_sampled_pp) |>
-    pull(agrp_prp_id)
+    pull(propertyID)
 
   # create strata by decile
   # each property will belong to a decile of each land cover variable
@@ -234,7 +232,7 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
     mutate(canopy_strata = make_strata(c_canopy, breaks = 10),
            rugged_strata = make_strata(c_rugged, breaks = 10),
            road_den_strata = make_strata(c_road_den, breaks = 10)) |>
-    select(agrp_prp_id, contains("strata")) |>
+    select(propertyID, contains("strata")) |>
     distinct()
 
   col_sample <- function(dfs, col){
@@ -244,11 +242,11 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
       min()
 
     dfs |>
-      filter(agrp_prp_id %in% good_ts) |>
+      filter(propertyID %in% good_ts) |>
       group_by(.data[[col]]) |>
       slice_sample(n = min(min_sample, n_strata)) |>
       ungroup() |>
-      pull(agrp_prp_id)
+      pull(propertyID)
   }
 
   canopy_sample <- col_sample(df_strata, "canopy_strata")
@@ -259,7 +257,7 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
   if(!is.null(properties_include)) props <- c(props, properties_include)
 
   df_sample <- df_strata |>
-    filter(agrp_prp_id %in% unique(props))
+    filter(propertyID %in% unique(props))
 
   message("Number of properties in each canopy strata:")
   print(table(df_sample$canopy_strata))
@@ -269,35 +267,35 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
   print(table(df_sample$road_den_strata))
 
   new_data <- df |>
-    filter(agrp_prp_id %in% props) |>
+    filter(propertyID %in% props) |>
     mutate(primary_period = primary_period - min(primary_period) + 1)
   return(new_data)
 }
 
 condition_first_capture <- function(df){
   good_events <- df |>
-    group_by(agrp_prp_id, timestep) |>
+    group_by(propertyID, timestep) |>
     summarise(take = sum(take)) |>
     ungroup() |>
-    group_by(agrp_prp_id) |>
+    group_by(propertyID) |>
     mutate(cumulative_take = cumsum(take)) |>
     ungroup() |>
     filter(cumulative_take > 0) |>
-    mutate(event_id = paste0(agrp_prp_id, "-", timestep)) |>
+    mutate(event_id = paste0(propertyID, "-", timestep)) |>
     pull(event_id)
 
   df |>
-    mutate(event_id = paste0(agrp_prp_id, "-", timestep)) |>
+    mutate(event_id = paste0(propertyID, "-", timestep)) |>
     filter(event_id %in% good_events) |>
-    arrange(agrp_prp_id, timestep)
+    arrange(propertyID, timestep)
 }
 
 create_timestep_df <- function(df){
   df |>
-    select(agrp_prp_id, primary_period) |>
+    select(propertyID, primary_period) |>
     unique() |>
-    arrange(agrp_prp_id, primary_period) |>
-    group_by(agrp_prp_id) |>
+    arrange(propertyID, primary_period) |>
+    group_by(propertyID) |>
     mutate(observed_timestep = 1:n()) |> # timestep is the sequence of primary periods within a property
     ungroup() |>
     mutate(primary_period = primary_period - min(primary_period) + 1)
@@ -321,7 +319,8 @@ get_data <- function(file, interval){
            trap_count = cmp.qty) |>
     select(-wt_work_date, -hours, -cmp.hours, -cmp.days) |>
     distinct() |>
-    arrange(agrp_prp_id, start.date, end.date)
+    mutate(propertyID = paste0(agrp_prp_id, "-", alws_agrprop_id)) |>
+    arrange(propertyID, start.date, end.date)
 
   # create PP of length [interval]
   data_timestep <- create_primary_periods(data_mis, interval) |>
@@ -341,7 +340,7 @@ get_data <- function(file, interval){
   timestep_df <- create_timestep_df(data_timestep)
 
   data_pp <- left_join(data_timestep, timestep_df,
-                       by = join_by(agrp_prp_id, primary_period)) |>
+                       by = join_by(propertyID, primary_period)) |>
     mutate(primary_period = primary_period - min(primary_period) + 1)
 
   return(data_pp)
