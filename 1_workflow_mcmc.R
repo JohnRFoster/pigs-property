@@ -53,7 +53,6 @@ farm_bill_properties <- data_farm_bill |>
   mutate(farm_bill = 1)
 
 data_final <- left_join(data_join2, farm_bill_properties)
-data_final <- data_final |> filter(farm_bill == 1)
 
 print_info <- function(df){
   fit_properties <- length(unique(df$agrp_prp_id))
@@ -92,7 +91,7 @@ if(first_fit){ # run first fit
   #   properties_include = NULL # properties we want to make sure are in development data
   # )
 
-  data_for_nimble <- data_final
+  data_for_nimble <- data_final |> filter(farm_bill == 1)
   print_info(data_for_nimble)
   data_for_nimble |>
     group_by(method) |>
