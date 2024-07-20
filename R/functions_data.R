@@ -209,7 +209,6 @@ get_n_observations <- function(df, good_props){
 subset_data_for_development <- function(df, min_length, max_length, min_sampled_pp, n_strata, properties_include = NULL){
 
   require(rsample)
-  set.seed(753)
 
   # get properties that have a total time series length of 50 primary periods or less
   ts_length <- get_ts_length(df) |>
@@ -236,6 +235,9 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
     distinct()
 
   col_sample <- function(dfs, col){
+
+    set.seed(753)
+
     min_sample <- dfs |>
       pull(all_of(col)) |>
       table() |>
@@ -259,12 +261,12 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
   df_sample <- df_strata |>
     filter(propertyID %in% unique(props))
 
-  message("Number of properties in each canopy strata:")
-  print(table(df_sample$canopy_strata))
-  message("Number of properties in each rugged strata:")
-  print(table(df_sample$rugged_strata))
-  message("Number of properties in each road density strata:")
-  print(table(df_sample$road_den_strata))
+  # message("Number of properties in each canopy strata:")
+  # print(table(df_sample$canopy_strata))
+  # message("Number of properties in each rugged strata:")
+  # print(table(df_sample$rugged_strata))
+  # message("Number of properties in each road density strata:")
+  # print(table(df_sample$road_den_strata))
 
   new_data <- df |>
     filter(propertyID %in% props) |>

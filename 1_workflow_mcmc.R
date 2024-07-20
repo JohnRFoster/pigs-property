@@ -9,7 +9,7 @@ library(tidyr)
 library(readr)
 library(parallel)
 
-config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -90,16 +90,15 @@ if(first_fit){ # run first fit
 
   informed <- FALSE
 
-  # data_for_nimble <- subset_data_for_development(
-  #   df = data_final,
-  #   min_length = 2,          # minimum time series length (includes unsampled PPs)
-  #   max_length = 100,          # maximum time series length (includes unsampled PPs)
-  #   min_sampled_pp = 0.3,      # minimum proportion of sampled PPs in time series
-  #   n_strata = 30,             # number of samples per strata (decile) of environmental covaraites
-  #   properties_include = NULL # properties we want to make sure are in development data
-  # )
+  data_for_nimble <- subset_data_for_development(
+    df = data_final,
+    min_length = 2,          # minimum time series length (includes unsampled PPs)
+    max_length = 100,          # maximum time series length (includes unsampled PPs)
+    min_sampled_pp = 0.3,      # minimum proportion of sampled PPs in time series
+    n_strata = 30,             # number of samples per strata (decile) of environmental covaraites
+    properties_include = NULL # properties we want to make sure are in development data
+  )
 
-  data_for_nimble <- data_final |> filter(farm_bill == 1)
   print_info(data_for_nimble)
   data_for_nimble |>
     group_by(method) |>
