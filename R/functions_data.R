@@ -206,23 +206,34 @@ get_n_observations <- function(df, good_props){
     count()
 }
 
-subset_data_for_development <- function(df, min_length, max_length, min_sampled_pp, n_strata, properties_include = NULL){
+subset_data_for_development <- function(df, n){
 
   require(rsample)
 
-  # get properties that have a total time series length of 50 primary periods or less
-  ts_length <- get_ts_length(df) |>
-    filter(delta <= max_length,
-           delta >= min_length)
+  observed_pp <- df |>
+    select(propertyID, primary_period) |>
+    distinct() |>
+    count(propertyID) |>
+    rename(n_observed_pp = n)
 
-  good_props <- ts_length |> pull(propertyID) |> unique()
 
-  # given the properties identified above, subset to those that have at least n observed primary periods
-  n_obs <- get_n_observations(df, good_props)
-
-  good_ts <- left_join(ts_length, n_obs) |>
-    mutate(precent_obs = n / delta) |>
-    filter(precent_obs > min_sampled_pp) |>
+  property_order <- df |>
+    group_by(propertyID, property_area_km2) |>
+    summarise(take = sum(take),
+              effort = sum(effort_per),
+              unit_count = sum(trap_count),
+              n_total_events = n()) |>
+    ungroup() |>
+    left_join(observed_pp) |>
+    arrange(
+      desc(take),
+      desc(property_area_km2),
+      desc(n_total_events),
+      desc(n_observed_pp),
+      desc(effort),
+      desc(unit_count)
+    ) |>
+    slice(1:n) |>
     pull(propertyID)
 
   # create strata by decile
@@ -234,42 +245,18 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
     select(propertyID, contains("strata")) |>
     distinct()
 
-  col_sample <- function(dfs, col){
-
-    set.seed(753)
-
-    min_sample <- dfs |>
-      pull(all_of(col)) |>
-      table() |>
-      min()
-
-    dfs |>
-      filter(propertyID %in% good_ts) |>
-      group_by(.data[[col]]) |>
-      slice_sample(n = min(min_sample, n_strata)) |>
-      ungroup() |>
-      pull(propertyID)
-  }
-
-  canopy_sample <- col_sample(df_strata, "canopy_strata")
-  rugged_sample <- col_sample(df_strata, "rugged_strata")
-  road_den_sample <- col_sample(df_strata, "road_den_strata")
-
-  props <- c(canopy_sample, rugged_sample, road_den_sample)
-  if(!is.null(properties_include)) props <- c(props, properties_include)
-
   df_sample <- df_strata |>
-    filter(propertyID %in% unique(props))
+    filter(propertyID %in% property_order)
 
-  # message("Number of properties in each canopy strata:")
-  # print(table(df_sample$canopy_strata))
-  # message("Number of properties in each rugged strata:")
-  # print(table(df_sample$rugged_strata))
-  # message("Number of properties in each road density strata:")
-  # print(table(df_sample$road_den_strata))
+  message("Number of properties in each canopy strata:")
+  print(table(df_sample$canopy_strata))
+  message("Number of properties in each rugged strata:")
+  print(table(df_sample$rugged_strata))
+  message("Number of properties in each road density strata:")
+  print(table(df_sample$road_den_strata))
 
   new_data <- df |>
-    filter(propertyID %in% props)
+    filter(propertyID %in% property_order)
   return(new_data)
 }
 
