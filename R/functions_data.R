@@ -201,7 +201,7 @@ get_n_observations <- function(df, good_props){
     group_by(propertyID, primary_period) |>
     summarise(take = sum(take)) |>
     ungroup() |>
-    filter(take > 0) |>
+    # filter(take > 0) |>
     group_by(propertyID) |>
     count()
 }
@@ -269,8 +269,7 @@ subset_data_for_development <- function(df, min_length, max_length, min_sampled_
   # print(table(df_sample$road_den_strata))
 
   new_data <- df |>
-    filter(propertyID %in% props) |>
-    mutate(primary_period = primary_period - min(primary_period) + 1)
+    filter(propertyID %in% props)
   return(new_data)
 }
 
