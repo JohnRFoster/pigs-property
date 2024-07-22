@@ -9,7 +9,7 @@ library(tidyr)
 library(readr)
 library(parallel)
 
-config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -92,12 +92,13 @@ if(first_fit){ # run first fit
 
   data_for_nimble <- subset_data_for_development(
     df = data_final,
-    min_length = 3,          # minimum time series length (includes unsampled PPs)
+    min_length = 5,          # minimum time series length (includes unsampled PPs)
     max_length = 50,          # maximum time series length (includes unsampled PPs)
-    min_sampled_pp = 0.30,      # minimum proportion of sampled PPs in time series
+    min_sampled_pp = 0.5,      # minimum proportion of sampled PPs in time series
     n_strata = 30,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
-  )
+  ) |>
+    mutate(primary_period = primary_period - min(primary_period) + 1)
 
   print_info(data_for_nimble)
   data_for_nimble |>
@@ -181,7 +182,8 @@ if(first_fit){ # run first fit
     last_good_fit <- basename(post_path)
 
     data_last_fit <- read_rds(file.path(out_dir, last_good_fit, "modelData.rds"))
-    data_for_nimble <- get_next_property(data_final, data_last_fit)
+    data_for_nimble <- get_next_property(data_final, data_last_fit) |>
+      mutate(primary_period = primary_period - min(primary_period) + 1)
 
     message("\n==========================================================")
     print_info(data_for_nimble)
