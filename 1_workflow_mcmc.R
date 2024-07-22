@@ -92,9 +92,9 @@ if(first_fit){ # run first fit
 
   data_for_nimble <- subset_data_for_development(
     df = data_final,
-    min_length = 2,          # minimum time series length (includes unsampled PPs)
+    min_length = 3,          # minimum time series length (includes unsampled PPs)
     max_length = 50,          # maximum time series length (includes unsampled PPs)
-    min_sampled_pp = 0.35,      # minimum proportion of sampled PPs in time series
+    min_sampled_pp = 0.30,      # minimum proportion of sampled PPs in time series
     n_strata = 30,             # number of samples per strata (decile) of environmental covaraites
     properties_include = NULL # properties we want to make sure are in development data
   )
