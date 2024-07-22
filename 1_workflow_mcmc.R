@@ -9,7 +9,7 @@ library(tidyr)
 library(readr)
 library(parallel)
 
-config_name <- "hpc_dev"
+config_name <- "hpc_default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
