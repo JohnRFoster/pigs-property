@@ -4,15 +4,15 @@ get_next_property <- function(all_data, data_last_fit){
   require(rsample)
 
   # find properties not in first fit
-  last_fit_properties <- unique(data_last_fit$agrp_prp_id)
-  all_properties <- unique(all_data$agrp_prp_id)
+  last_fit_properties <- unique(data_last_fit$propertyID)
+  all_properties <- unique(all_data$propertyID)
   not_fit_properties <- setdiff(all_properties, last_fit_properties)
   targets::tar_assert_true(
     length(not_fit_properties) + length(last_fit_properties) == length(all_properties)
   )
 
   ts_length <- get_ts_length(all_data)
-  n_obs <- get_n_observations(all_data, ts_length$agrp_prp_id)
+  n_obs <- get_n_observations(all_data, ts_length$propertyID)
 
   ts_sorted <- left_join(ts_length, n_obs) |>
     mutate(percent_obs_strata = n / delta) |>
@@ -23,7 +23,7 @@ get_next_property <- function(all_data, data_last_fit){
     mutate(canopy_strata = as.numeric(as.factor(make_strata(c_canopy, breaks = 10))),
            rugged_strata = as.numeric(as.factor(make_strata(c_rugged, breaks = 10))),
            road_den_strata = as.numeric(as.factor(make_strata(c_road_den, breaks = 10)))) |>
-    select(agrp_prp_id, st_name, cnty_name, contains("strata")) |>
+    select(propertyID, st_name, cnty_name, contains("strata")) |>
     distinct()
 
   # rank remaining properties
@@ -42,18 +42,18 @@ get_next_property <- function(all_data, data_last_fit){
 
   # remaining properties
   remaining_property_order <- property_order |>
-    filter(!agrp_prp_id %in% last_fit_properties)
+    filter(!propertyID %in% last_fit_properties)
 
   if(nrow(remaining_property_order) == 0){
     stop("All properties have been fit!")
   } else {
     next_property <- remaining_property_order |>
       slice(1) |>
-      pull(agrp_prp_id)
+      pull(propertyID)
 
-    new_data <- all_data |> filter(agrp_prp_id == next_property)
+    new_data <- all_data |> filter(propertyID == next_property)
 
-    to_fit_properties <- unique(new_data$agrp_prp_id)
+    to_fit_properties <- unique(new_data$propertyID)
     not_fit_properties <- setdiff(all_properties, to_fit_properties)
     targets::tar_assert_true(
       length(not_fit_properties) + length(to_fit_properties) == length(all_properties)
