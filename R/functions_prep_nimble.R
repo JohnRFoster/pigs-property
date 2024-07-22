@@ -380,7 +380,7 @@ nimble_data <- function(df, data_ls){
 # ==========================================
 
 
-nimble_inits <- function(constants_nimble, data_nimble, buffer = 100){
+nimble_inits <- function(constants_nimble, data_nimble, buffer = 1000){
 
   with(append(constants_nimble, data_nimble), {
 
@@ -389,8 +389,8 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 100){
     p_mu <- jitter(c(-2.5, -3))
     log_gamma <- jitter(c(-2, -1.5))
     log_rho <- jitter(c(2.4, 2, 5, 0.4, 0.8))
-    psi_phi <- runif(1, 0.5, 0.7)
-    phi_mu <- runif(1, 0.6, 0.7)
+    psi_phi <- runif(1, 3, 5)
+    phi_mu <- runif(1, 0.7, 0.8)
     mean_ls <- round(runif(1, 11, 12))
 
     a <- phi_mu * psi_phi
@@ -400,7 +400,7 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 100){
     N <- phi <- lambda <- rep(NA, max(nH, na.rm = TRUE))
     n_init <- rep(NA, n_property)
     for(i in 1:n_property){
-      n_init[i] <- round(exp(unique_log_areas[i])*3) + sum(rem[i, ], na.rm = TRUE) * 2
+      n_init[i] <- round(exp(unique_log_areas[i])) + sum(rem[i, ], na.rm = TRUE)
       # if(n_init[i] > 5000) n_init[i] <- rpois(1, 500)
       N[nH[i, 1]] <- n_init[i]
       for(j in 2:n_time_prop[i]){
@@ -437,7 +437,7 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 100){
   })
 }
 
-nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, buffer = 100){
+nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, buffer = 500){
 
   rds <- read_rds(posterior_file)
   params <- as_tibble(as.matrix(rds$params))
@@ -476,7 +476,7 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
   N <- phi <- lambda <- rep(NA, max(nH, na.rm = TRUE))
   n_init <- rep(NA, n_property)
   for(i in 1:n_property){
-    n_init[i] <- round(exp(unique_log_areas[i])*3) + sum(rem[i, ], na.rm = TRUE) * 2
+    n_init[i] <- round(exp(unique_log_areas[i])*5) + sum(rem[i, ], na.rm = TRUE) * 2
     # if(n_init[i] > 5000) n_init[i] <- rpois(1, 500)
     N[nH[i, 1]] <- n_init[i]
     for(j in 2:n_time_prop[i]){
