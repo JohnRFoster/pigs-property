@@ -384,14 +384,14 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 500){
 
   with(append(constants_nimble, data_nimble), {
 
-    beta1 <- jitter(c(-2.5, 0, 2, -3, -2.5))
-    beta_p <- matrix(rnorm(m_p*n_method, 0, 0.05), n_method, m_p)
-    p_mu <- jitter(c(1, -2))
-    log_gamma <- jitter(c(0, -1))
-    log_rho <- jitter(c(1, 1, 7, 0.4, 0.8))
-    psi_phi <- runif(1, 2, 4)
-    phi_mu <- runif(1, 0.6, 0.8)
-    mean_ls <- round(runif(1, 5, 7))
+    beta1 <- jitter(c(-2, 0, 0.5, -3.5, -3.5))
+    beta_p <- matrix(jitter(c(2.5, -2, -0.5, -1, -0.5, 0, 0, 1, -1.5, -0.5, 1, 1, 0.5, 0, 0.25)), n_method, m_p)
+    p_mu <- jitter(c(-2.5, -3))
+    log_gamma <- jitter(c(-2, -1.5))
+    log_rho <- jitter(c(2.4, 2, 5, 0.4, 0.8))
+    psi_phi <- runif(1, 0.5, 0.7)
+    phi_mu <- runif(1, 0.6, 0.7)
+    mean_ls <- round(runif(1, 11, 12))
 
     a <- phi_mu * psi_phi
     b <- (1 - phi_mu) * psi_phi
