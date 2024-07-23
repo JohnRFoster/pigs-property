@@ -91,10 +91,7 @@ if(first_fit){ # run first fit
 
   informed <- FALSE
 
-  data_for_nimble <- subset_data_for_development(
-    df = data_final,
-    n = 25
-  ) |>
+  data_for_nimble <- subset_data_for_development(data_final) |>
     mutate(primary_period = primary_period - min(primary_period) + 1)
 
   print_info(data_for_nimble)

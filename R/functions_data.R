@@ -206,7 +206,7 @@ get_n_observations <- function(df, good_props){
     count()
 }
 
-subset_data_for_development <- function(df, n){
+subset_data_for_development <- function(df){
 
   require(rsample)
 
@@ -216,25 +216,29 @@ subset_data_for_development <- function(df, n){
     count(propertyID) |>
     rename(n_observed_pp = n)
 
+  ts_length <- get_ts_length(df) |>
+    rename(ts_length = delta) |>
+    select(-primary_period)
 
-  property_order <- df |>
+  best_properties <- df |>
     group_by(propertyID, property_area_km2) |>
     summarise(take = sum(take),
               effort = sum(effort_per),
               unit_count = sum(trap_count),
               n_total_events = n()) |>
     ungroup() |>
+    left_join(ts_length) |>
     left_join(observed_pp) |>
-    arrange(
-      desc(take),
-      desc(property_area_km2),
-      desc(n_total_events),
-      desc(n_observed_pp),
-      desc(effort),
-      desc(unit_count)
-    ) |>
-    slice(1:n) |>
-    pull(propertyID)
+    mutate(prop_observed = n_observed_pp / ts_length) |>
+    filter(property_area_km2 >= 7.94, property_area_km2 <= 1885.88,
+           take >= 7, take <= 3131,
+           n_total_events >= 6, n_total_events <= 202,
+           n_observed_pp >= 3, n_observed_pp <= 30,
+           ts_length >= 3, ts_length <= 40,
+           prop_observed >= 0.14)
+
+
+  property_order <- best_properties$propertyID
 
   # create strata by decile
   # each property will belong to a decile of each land cover variable
