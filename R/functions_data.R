@@ -230,11 +230,11 @@ subset_data_for_development <- function(df){
     left_join(ts_length) |>
     left_join(observed_pp) |>
     mutate(prop_observed = n_observed_pp / ts_length) |>
-    filter(property_area_km2 >= 7.94, property_area_km2 <= 1885.88,
-           take >= 7, take <= 3131,
-           n_total_events >= 6, n_total_events <= 202,
-           n_observed_pp >= 3, n_observed_pp <= 30,
-           ts_length >= 3, ts_length <= 40,
+    filter(property_area_km2 >= 11.2, property_area_km2 <= 737,
+           take >= 23, take <= 1672,
+           n_total_events >= 8, n_total_events <= 167,
+           n_observed_pp >= 3, n_observed_pp <= 26,
+           ts_length >= 4, ts_length <= 40,
            prop_observed >= 0.14)
 
 
