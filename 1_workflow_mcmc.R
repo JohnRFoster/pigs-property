@@ -93,7 +93,7 @@ if(first_fit){ # run first fit
 
   data_for_nimble <- subset_data_for_development(
     df = data_final,
-    n = 50
+    n = 25
   ) |>
     mutate(primary_period = primary_period - min(primary_period) + 1)
 
