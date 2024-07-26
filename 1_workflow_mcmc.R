@@ -28,7 +28,7 @@ file <- file.path(data_repo, config$file_mis)
 interval <- config$interval
 dev <- config$dev
 
-data_mis <- get_data(file, interval)
+data_mis <- get_data(file, interval, data_repo)
 
 ## observation covariates ----
 file <- file.path(data_repo, config$file_land)
