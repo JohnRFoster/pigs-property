@@ -101,7 +101,7 @@ hyper_grid <- expand_grid(
   trees = 0
 )
 
-hyper_grid <- hyper_grid[1:50, ]
+# hyper_grid <- hyper_grid[1:50, ]
 
 pb <- txtProgressBar(min = 1, max = nrow(hyper_grid), style = 1)
 for(i in 1:nrow(hyper_grid)){
