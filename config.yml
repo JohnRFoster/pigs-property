@@ -6,6 +6,7 @@ default:
   params_check: !expr c("beta_p","beta1","log_gamma","log_rho","phi_mu","psi_phi","log_nu","p_mu")
   data_repo: "C:/Users/John.Foster/OneDrive - USDA/Desktop/fosteR/pigs-statistical/data"
   out_dir: "C:/Users/John.Foster/Downloads/iterativeFits"
+  out_ml: "C:/Users/John.Foster/Downloads/ml"
   first_fit: "256properties_uninformedPriors_combined"
   file_mis: "insitu/MIS.Effort.Take.All.Methods.Daily.Events.01JUL2024.csv"
   file_land: 'covariates/FINAL.Process.Model.Observation.Covariates.12Jan2018.csv'
@@ -14,4 +15,5 @@ default:
 hpc_dev:
   data_repo: "/lustrefs/ceah/feral-swine/data"
   out_dir: "/lustrefs/ceah/feral-swine/property-fits/iterativeFits"
+  out_ml: "/lustrefs/ceah/feral-swine/property-fits/ml"
   n_iter: 50000
