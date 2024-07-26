@@ -23,9 +23,9 @@ my_recipe <- function(data){
   blueprint <- recipe(y ~ ., data = data) |>
     step_novel(methods_used, st_name, cnty_name, ecoregion) |>
     step_dummy(all_nominal_predictors()) |>
+    step_nzv(all_predictors()) |>
     step_center(all_numeric_predictors()) |>
-    step_scale(all_numeric_predictors()) |>
-    step_nzv(all_predictors())
+    step_scale(all_numeric_predictors())
 
     return(blueprint)
 
