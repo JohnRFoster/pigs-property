@@ -3,7 +3,7 @@
 
 ## ---------------------------- Data ingest -----------------------------------
 
-create_primary_periods <- function(df, interval) {
+create_primary_periods <- function(df, interval, data_repo) {
   require(lubridate)
 
   end_dates <- unique(sort(df$end.date))
@@ -37,8 +37,11 @@ create_primary_periods <- function(df, interval) {
   }
   close(pb)
 
+  write_csv(timestep_df, file.path(data_repo, "timestep_df.csv"))
+
   df |>
     filter(!is.na(timestep)) |>
+    left_join(timestep_df) |>
     arrange(propertyID, timestep)
 
 }
@@ -170,7 +173,8 @@ county_codes <- function(df){
            countyfp = ifelse(cnty_name == "HUMBOLDT (E)", "013", countyfp),
            county_code = as.numeric(paste0(statefp, countyfp)),
            county_code = sprintf("%05d", county_code)) |> # need this for joining downstream
-    select(propertyID, agrp_prp_id, alws_agrprop_id, st_name, cnty_name, county_code, method, trap_count,
+    select(propertyID, agrp_prp_id, alws_agrprop_id, start_dates, end_dates,
+           st_name, cnty_name, county_code, method, trap_count,
            take, property_area_km2, effort, effort_per, timestep, order, n_survey, p) |>
     rename(primary_period = timestep)
 }
@@ -294,7 +298,7 @@ create_timestep_df <- function(df){
 }
 
 
-get_data <- function(file, interval){
+get_data <- function(file, interval, data_repo){
   all_take <- read_csv(file, show_col_types = FALSE) |>
     filter(start.date >= lubridate::ymd("2014-01-01")) |>
     mutate(cnty_name = if_else(grepl("ST ", cnty_name), gsub("ST ", "ST. ", cnty_name), cnty_name),
@@ -315,7 +319,7 @@ get_data <- function(file, interval){
     arrange(propertyID, start.date, end.date)
 
   # create PP of length [interval]
-  data_timestep <- create_primary_periods(data_mis, interval) |>
+  data_timestep <- create_primary_periods(data_mis, interval, data_repo) |>
     resolve_duplicate() |>         # resolve duplicate property areas
     take_filter() |>               # remove properties with zero pigs taken
     dynamic_filter() |>            # filter out bad events & properties
