@@ -101,7 +101,7 @@ hyper_grid <- expand_grid(
   trees = 0
 )
 
-hyper_grid <- hyper_grid[1:25, ]
+hyper_grid <- hyper_grid[1:50, ]
 
 pb <- txtProgressBar(min = 1, max = nrow(hyper_grid), style = 1)
 for(i in 1:nrow(hyper_grid)){
@@ -177,12 +177,19 @@ r2 <- cor(baked_test$y, df_pred$pred)^2
 vi <- xgb.importance(model = fit)
 vi$gainRelative <- vi$Gain / max(vi$Gain)
 
+
+message("===============================")
+message("RMSE: ", round(rmse, 2))
+message("R2: ", round(r2, 2))
+message("===============================")
+
 out_list <- list(
   baked_train = baked_train,
   baked_test = df_pred,
   train_test_rmse <- rmse,
   train_test_r2 <- r2,
-  vi = vi
+  vi = vi,
+  hyper_grid = hyper_grid
 )
 
 
