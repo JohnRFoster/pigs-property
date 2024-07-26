@@ -245,7 +245,7 @@ out_list$oos_pred <- oos_pred
 
 ml_dir <- config$out_ml
 if(!dir.exists(ml_dir)) dir.create(ml_dir, recursive = TRUE, showWarnings = FALSE)
-write_rds(out_list, file.path(ml_dir, "mlFits.rds"))
+write_rds(out_list, file.path(ml_dir, paste0(response, "_mlFits.rds")))
 
 
 
