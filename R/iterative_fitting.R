@@ -14,34 +14,67 @@ get_next_property <- function(all_data, data_last_fit){
   ts_length <- get_ts_length(all_data)
   n_obs <- get_n_observations(all_data, ts_length$propertyID)
 
-  ts_sorted <- left_join(ts_length, n_obs) |>
-    mutate(percent_obs_strata = n / delta) |>
-    mutate(percent_obs_strata = as.numeric(as.factor(make_strata(percent_obs_strata, breaks = 10))))
+  ts_sorted <- all_data |>
+    group_by(propertyID, property_area_km2) |>
+    summarise(take = sum(take),
+              effort = sum(effort_per),
+              unit_count = sum(trap_count),
+              n_total_events = n()) |>
+    ungroup() |>
+    left_join(ts_length) |>
+    left_join(n_obs)
 
+  group1 <- ts_sorted |>
+    filter(property_area_km2 <= 2339,
+           take > 1, take <= 16443,
+           n_total_events >= 4, n_total_events <= 269,
+           n >= 2, n <= 35,
+           delta >= 2, delta <= 40,
+           effort >= 1.3, effort <= 614,
+           unit_count >= 4, unit_count <= 1947) |>
+    pull(propertyID)
 
-  df_strata <- all_data |>
-    mutate(canopy_strata = as.numeric(as.factor(make_strata(c_canopy, breaks = 10))),
-           rugged_strata = as.numeric(as.factor(make_strata(c_rugged, breaks = 10))),
-           road_den_strata = as.numeric(as.factor(make_strata(c_road_den, breaks = 10)))) |>
-    select(propertyID, st_name, cnty_name, contains("strata")) |>
-    distinct()
+  get_strata <- function(df){
+    df_strata <- df |>
+      mutate(canopy_strata = as.numeric(as.factor(make_strata(c_canopy, breaks = 10))),
+             rugged_strata = as.numeric(as.factor(make_strata(c_rugged, breaks = 10))),
+             road_den_strata = as.numeric(as.factor(make_strata(c_road_den, breaks = 10)))) |>
+      select(propertyID, st_name, cnty_name, contains("strata")) |>
+      distinct()
+
+  }
+
+  strata1 <- all_data |>
+    filter(propertyID %in% group1) |>
+    get_strata()
+  data1 <- ts_sorted |>
+    filter(propertyID %in% group1)
+
+  strata2 <- all_data |>
+    filter(!propertyID %in% group1) |>
+    get_strata()
+  data2 <- ts_sorted |>
+    filter(!propertyID %in% group1)
+
+  get_order <- function(df, strat){
+    df_join <- left_join(df, strat)
+
+    varmax <- df_join |>
+      group_by(rugged_strata, road_den_strata) |>
+      summarise(gmax = max(canopy_strata)) |>
+      ungroup()
+
+    # this is the order of properties if we didn't fit the initial batch
+    property_order <- left_join(df_join, varmax) |>
+      arrange(desc(gmax))
+  }
 
   # rank remaining properties
-  #   proportion of timeseries that is sampled
-  #     if tied, rank by length, short to long
-  df_join <- left_join(ts_sorted, df_strata)
-
-  varmax <- df_join |>
-    group_by(canopy_strata, rugged_strata, road_den_strata) |>
-    summarise(gmax = max(percent_obs_strata)) |>
-    ungroup()
-
-  # this is the order of properties if we didn't fit the initial batch
-  property_order <- left_join(df_join, varmax) |>
-    arrange(desc(gmax), desc(percent_obs_strata))
+  order1 <- get_order(data1, strata1)
+  order2 <- get_order(data2, strata2)
 
   # remaining properties
-  remaining_property_order <- property_order |>
+  remaining_property_order <- bind_rows(order1, order2) |>
     filter(!propertyID %in% last_fit_properties)
 
   if(nrow(remaining_property_order) == 0){
