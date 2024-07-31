@@ -296,20 +296,23 @@ get_prior_hyperparams <- function(informed, posterior_path = NULL, data_repo = N
   return(hyperparams)
 }
 
-# mean litter size year from VerCauteren et al. 2019 pg 63
-data_litter_size <- round(
-  c(
-    5.6, 6.1, 5.6, 6.1, 4.2, 5.0, 5.0, 6.5, 5.5, 6.8,
-    5.6, 5.9, 4.9, 5.1, 4.5, 4.7, 5.3, 5.7, 7.4, 8.4,
-    4.7, 4.9, 3.0, 3.0, 4.8, 4.8, 4.2, 5.4, 4.7, 5.2, 5.4
-  )
-)
+
 
 # ==========================================
 # Create lists for nimble ----
 # ==========================================
 
-nimble_constants <- function(df, interval, data_repo, informed, posterior_path = NULL, data_ls = data_litter_size){
+nimble_constants <- function(df, interval, data_repo, informed, posterior_path = NULL){
+
+  # mean litter size year from VerCauteren et al. 2019 pg 63
+  data_ls <- round(
+    c(
+      5.6, 6.1, 5.6, 6.1, 4.2, 5.0, 5.0, 6.5, 5.5, 6.8,
+      5.6, 5.9, 4.9, 5.1, 4.5, 4.7, 5.3, 5.7, 7.4, 8.4,
+      4.7, 4.9, 3.0, 3.0, 4.8, 4.8, 4.2, 5.4, 4.7, 5.2, 5.4
+    )
+  )
+
 
   all_primary_periods <- create_all_primary_periods(df)
   n_time_prop <- n_timesteps(all_primary_periods)
@@ -357,7 +360,16 @@ nimble_constants <- function(df, interval, data_repo, informed, posterior_path =
 
 }
 
-nimble_data <- function(df, data_ls = data_litter_size){
+nimble_data <- function(df){
+
+  # mean litter size year from VerCauteren et al. 2019 pg 63
+  data_ls <- round(
+    c(
+      5.6, 6.1, 5.6, 6.1, 4.2, 5.0, 5.0, 6.5, 5.5, 6.8,
+      5.6, 5.9, 4.9, 5.1, 4.5, 4.7, 5.3, 5.7, 7.4, 8.4,
+      4.7, 4.9, 3.0, 3.0, 4.8, 4.8, 4.2, 5.4, 4.7, 5.2, 5.4
+    )
+  )
 
   X <- create_X(df)
   y_sum <- removed_in_pp_cumsum(df)
