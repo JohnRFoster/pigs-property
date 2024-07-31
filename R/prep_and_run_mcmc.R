@@ -11,25 +11,15 @@ prep_and_run_mcmc <- function(informed, post_path, data_repo, dest_mcmc,
   # Prepare data for NIMBLE ----
   # ===================================================
 
-  # mean litter size year from VerCauteren et al. 2019 pg 63
-  data_litter_size <- round(
-    c(
-      5.6, 6.1, 5.6, 6.1, 4.2, 5.0, 5.0, 6.5, 5.5, 6.8,
-      5.6, 5.9, 4.9, 5.1, 4.5, 4.7, 5.3, 5.7, 7.4, 8.4,
-      4.7, 4.9, 3.0, 3.0, 4.8, 4.8, 4.2, 5.4, 4.7, 5.2, 5.4
-    )
-  )
-
   constants <- nimble_constants(
     df,
-    data_litter_size,
     interval,
     data_repo,
     informed,
     post_path
   )
 
-  data <- nimble_data(df, data_litter_size)
+  data <- nimble_data(df)
 
   n_chains <- as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK"))
   if(is.na(n_chains)) n_chains <- 3
