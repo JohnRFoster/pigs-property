@@ -31,10 +31,14 @@ my_recipe <- function(data){
 
 }
 
-group_join_for_ml <- function(df, df_landcover, df_ecoregions){
+group_join_for_ml <- function(df, df_ecoregions){
 
   # aggregate by primary period
   df_n_return <- return_intervals_methods_used(df)
+
+  df_landcover <- df |>
+    select(propertyID, c_road_den, c_rugged, c_canopy) |>
+    distinct()
 
   df |>
     group_by(propertyID, agrp_prp_id, start_dates, end_dates, st_name, cnty_name, farm_bill,

@@ -82,6 +82,7 @@ features <- c("cnty_name", "st_name", "farm_bill", "property_area_km2",
 ml_data <- model_data |>
   select(all_of(c(response, features))) |>
   rename(y = all_of(response)) |>
+  filter(y > 0) |>
   mutate(y = log(y))
 
 split <- initial_split(ml_data)
@@ -114,7 +115,7 @@ hyper_grid <- expand_grid(
   trees = 0
 )
 
-# hyper_grid <- hyper_grid[1:50, ]
+# hyper_grid <- hyper_grid[1:5, ]
 
 pb <- txtProgressBar(min = 1, max = nrow(hyper_grid), style = 1)
 for(i in 1:nrow(hyper_grid)){
@@ -248,7 +249,7 @@ bayes_fit_properties <- unique(data$propertyID)
 data_ml_filter <- data_join3 |>
   filter(!propertyID %in% bayes_fit_properties)
 
-oos_data <- group_join_for_ml(data_ml_filter, land_cover, ecoregions)
+oos_data <- group_join_for_ml(data_ml_filter, ecoregions)
 df_oos <- oos_data |> select(all_of(features))
 baked_oos <- bake(prepare, new_data = df_oos)
 
