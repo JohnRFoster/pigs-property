@@ -70,8 +70,8 @@ ecoregions <- terra::vect(filename) |>
   mutate(st_name = toupper(st_name),
          cnty_name = toupper(cnty_name))
 
-
-model_data <- group_join_for_ml(data, land_cover, ecoregions)
+data <- data |> left_join(land_cover)
+model_data <- group_join_for_ml(data, ecoregions)
 model_data <- model_data |> left_join(density)
 
 
