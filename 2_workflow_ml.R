@@ -24,8 +24,21 @@ objective <- "reg:squarederror"
 iterative_dir <- config$out_dir
 num_dirs <- list.files(iterative_dir)
 post_dirs <- grep("posterior", num_dirs, value = TRUE)
-last_dir <- max(as.numeric(stringr::str_extract(post_dirs, "^\\d*(?=\\_)")))
+iters <- sort(as.numeric(stringr::str_extract(post_dirs, "^\\d*(?=\\_)")), decreasing = TRUE)
+last_dir <- max(iters)
 read_dir <- paste0(last_dir, "_posterior")
+
+# check if posterior exists
+post <- file.path(iterative_dir, read_dir, "densitySummaries.rds")
+
+does_not_exist <- !file.exists(post)
+i <- 2
+while(does_not_exist){
+  read_dir <- paste0(iters[i], "_posterior")
+  post <- file.path(iterative_dir, read_dir, "densitySummaries.rds")
+  does_not_exist <- !file.exists(post)
+  i <- i + 1
+}
 
 path <- file.path(iterative_dir, read_dir, "modelData.rds")
 data <- read_rds(path) |>
