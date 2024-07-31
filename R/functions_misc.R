@@ -49,3 +49,14 @@ group_join_for_ml <- function(df, df_landcover, df_ecoregions){
     left_join(df_landcover) |>
     left_join(df_ecoregions)
 }
+
+trap_snare_lpa <- function(log_rho, log_gamma, p_unique, effort_per, n_trap_m1){
+  log(pi) +
+    (2 * (log_rho + log(effort_per) -
+            log(exp(log_gamma) + effort_per))) +
+    log(1 + (p_unique * n_trap_m1))
+}
+
+shooting_lpa <- function(log_rho, effort_per){
+  log_rho + log(effort_per)
+}
