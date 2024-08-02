@@ -12,8 +12,8 @@ config_name <- "hpc_dev"
 # config_name <- "default"
 config <- config::get(config = config_name)
 
-args <- commandArgs(trailingOnly = TRUE)
-task_id <- as.numeric(args[1])
+# args <- commandArgs(trailingOnly = TRUE)
+task_id <- 1
 
 ## choose response variable
 responses <- c("mean", "variance")
@@ -101,16 +101,18 @@ Y <- baked_train |> pull(y)
 
 set.seed(123)
 
+hyp_vec <- c(0, 1e-2, 0.1, 1, 10, 100, 1000)
+
 # hyperparameter grid
 hyper_grid <- expand_grid(
-  eta = 0.1,
-  max_depth = 3:8,
+  eta = 0.05,
+  max_depth = 3:9,
   min_child_weight = 0.5,
   subsample = 0.5,
   colsample_bytree = 0.5,
-  gamma = c(0, 1, 10, 100, 1000),
-  lambda = c(0, 1e-2, 0.1, 1, 100, 1000),
-  alpha = c(0, 1e-2, 0.1, 1, 100, 1000),
+  gamma = hyp_vec,
+  lambda = hyp_vec,
+  alpha = hyp_vec,
   rmse = 0,
   trees = 0
 )
@@ -185,6 +187,7 @@ make_prediction <- function(model, new_data){
 }
 
 df_pred <- make_prediction(fit, baked_test)
+df_pred$y <- baked_test$y
 
 rmse <- sqrt(mean((baked_test$y - df_pred$pred)^2))
 r2 <- cor(baked_test$y, df_pred$pred)^2
@@ -200,8 +203,8 @@ message("===============================")
 out_list <- list(
   baked_train = baked_train,
   baked_test = df_pred,
-  train_test_rmse <- rmse,
-  train_test_r2 <- r2,
+  train_test_rmse = rmse,
+  train_test_r2 = r2,
   vi = vi,
   hyper_grid = hyper_grid
 )
