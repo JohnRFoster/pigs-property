@@ -41,6 +41,7 @@ while(does_not_exist){
 }
 
 path <- file.path(iterative_dir, read_dir, "modelData.rds")
+path <- file.path(iterative_dir, "1_posterior", "modelData.rds")
 data <- read_rds(path) |>
   mutate(method = if_else(method == "FIREARMS", "Firearms", method),
          method = if_else(method == "FIXED WING", "Fixed wing", method),
