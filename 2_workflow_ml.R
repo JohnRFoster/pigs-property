@@ -101,15 +101,15 @@ Y <- baked_train |> pull(y)
 
 set.seed(123)
 
-hyp_vec <- c(0, 1e-2, 0.1, 1, 10, 100, 1000)
+hyp_vec <- c(0, 0.01, 0.1, 1, 10, 100)
 
 # hyperparameter grid
 hyper_grid <- expand_grid(
-  eta = 0.05,
-  max_depth = 3:9,
-  min_child_weight = 0.5,
+  eta = 0.1,
+  max_depth = 3,
+  min_child_weight = c(0.5, 1, 3),
   subsample = 0.5,
-  colsample_bytree = 0.5,
+  colsample_bytree = c(0.5, 0.75, 1),
   gamma = hyp_vec,
   lambda = hyp_vec,
   alpha = hyp_vec,
