@@ -41,7 +41,7 @@ while(does_not_exist){
 }
 
 path <- file.path(iterative_dir, read_dir, "modelData.rds")
-path <- file.path(iterative_dir, "1_posterior", "modelData.rds")
+path <- file.path(iterative_dir, "13_posterior", "modelData.rds")
 data <- read_rds(path) |>
   mutate(method = if_else(method == "FIREARMS", "Firearms", method),
          method = if_else(method == "FIXED WING", "Fixed wing", method),
@@ -123,7 +123,7 @@ hyper_grid <- expand_grid(
   trees = 0
 )
 
-hyper_grid <- hyper_grid[1:10, ]
+# hyper_grid <- hyper_grid[1:10, ]
 
 pb <- txtProgressBar(min = 1, max = nrow(hyper_grid), style = 1)
 for(i in 1:nrow(hyper_grid)){
