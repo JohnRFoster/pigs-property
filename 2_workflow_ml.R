@@ -261,10 +261,9 @@ data_ml_filter <- data_join3 |>
 oos_data <- group_join_for_ml(data_ml_filter, ecoregions)
 df_oos <- oos_data |>
   select(all_of(features)) |>
-  mutate(road_dens_strata = make_strata(c_road_den, breaks = 5),
-         rugged_strata = make_strata(c_rugged, breaks = 5),
-         canopy_strata = make_strata(c_canopy, breaks = 5)) |>
-  select(-all_of(c("c_road_den", "c_rugged", "c_canopy")))
+  mutate(road_dens_strata = make_strata(c_road_den, breaks = n_strata),
+         rugged_strata = make_strata(c_rugged, breaks = n_strata),
+         canopy_strata = make_strata(c_canopy, breaks = n_strata))
 
 baked_oos <- bake(prepare, new_data = df_oos)
 
