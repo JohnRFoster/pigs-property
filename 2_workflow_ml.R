@@ -80,13 +80,18 @@ features <- c("cnty_name", "st_name", "farm_bill", "property_area_km2",
               "total_take", "return_interval", "take_density", "methods_used",
               "c_road_den", "c_rugged", "c_canopy", "ecoregion")
 
+n_strata <- 3
+
 ml_data <- model_data |>
   select(all_of(c(response, features))) |>
   rename(y = all_of(response)) |>
   filter(y > 0) |>
-  mutate(y = log(y))
+  mutate(y = log(y),
+         road_dens_strata = make_strata(c_road_den, breaks = n_strata),
+         rugged_strata = make_strata(c_rugged, breaks = n_strata),
+         canopy_strata = make_strata(c_canopy, breaks = n_strata))
 
-split <- initial_split(ml_data)
+split <- initial_split(ml_data, strata = c("take_density"))
 df_train <- training(split)
 df_test <- testing(split)
 
@@ -118,7 +123,7 @@ hyper_grid <- expand_grid(
   trees = 0
 )
 
-# hyper_grid <- hyper_grid[1:5, ]
+hyper_grid <- hyper_grid[1:10, ]
 
 pb <- txtProgressBar(min = 1, max = nrow(hyper_grid), style = 1)
 for(i in 1:nrow(hyper_grid)){
@@ -254,7 +259,13 @@ data_ml_filter <- data_join3 |>
   filter(!propertyID %in% bayes_fit_properties)
 
 oos_data <- group_join_for_ml(data_ml_filter, ecoregions)
-df_oos <- oos_data |> select(all_of(features))
+df_oos <- oos_data |>
+  select(all_of(features)) |>
+  mutate(road_dens_strata = make_strata(c_road_den, breaks = 5),
+         rugged_strata = make_strata(c_rugged, breaks = 5),
+         canopy_strata = make_strata(c_canopy, breaks = 5)) |>
+  select(-all_of(c("c_road_den", "c_rugged", "c_canopy")))
+
 baked_oos <- bake(prepare, new_data = df_oos)
 
 oos_pred <- make_prediction(fit, baked_oos)
