@@ -82,13 +82,20 @@ features <- c("cnty_name", "st_name", "farm_bill", "property_area_km2",
 
 n_strata <- 3
 
+low_outlier <- quantile(model_data$mean, c(0.025))
+high_outlier <- quantile(model_data$mean, c(0.975))
+
 ml_data <- model_data |>
   select(all_of(c(response, features))) |>
   rename(y = all_of(response)) |>
-  filter(y > 0) |>
-  mutate(y = log(y))
+  filter(y > low_outlier,
+         y < high_outlier) |>
+  mutate(y = log(y),
+         road_dens_strata = make_strata(c_road_den, breaks = n_strata),
+         rugged_strata = make_strata(c_rugged, breaks = n_strata),
+         canopy_strata = make_strata(c_canopy, breaks = n_strata))
 
-split <- initial_split(ml_data, strata = c("take_density"))
+split <- initial_split(ml_data, prop = 0.8)
 df_train <- training(split)
 df_test <- testing(split)
 
@@ -112,7 +119,7 @@ hyper_grid <- expand_grid(
   max_depth = 3,
   min_child_weight = c(0.5, 1, 3),
   subsample = 0.5,
-  colsample_bytree = c(0.5, 0.75, 1),
+  colsample_bytree = 0.5,
   gamma = hyp_vec,
   lambda = hyp_vec,
   alpha = hyp_vec,
@@ -257,7 +264,10 @@ data_ml_filter <- data_join3 |>
 
 oos_data <- group_join_for_ml(data_ml_filter, ecoregions)
 df_oos <- oos_data |>
-  select(all_of(features))
+  select(all_of(features)) |>
+  mutate(road_dens_strata = make_strata(c_road_den, breaks = n_strata),
+         rugged_strata = make_strata(c_rugged, breaks = n_strata),
+         canopy_strata = make_strata(c_canopy, breaks = n_strata))
 
 baked_oos <- bake(prepare, new_data = df_oos)
 

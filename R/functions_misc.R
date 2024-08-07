@@ -57,6 +57,16 @@ group_join_for_ml <- function(df, df_ecoregions){
     left_join(df_ecoregions)
 }
 
+land_cover_class <- function(df){
+  df |>
+    mutate(canopy_class = if_else(c_canopy < -1, "low", "med"),
+           canopy_class = if_else(c_canopy > 1, "high", canopy_class),
+           rugged_class = if_else(c_rugged < -1, "low", "med"),
+           rugged_class = if_else(c_rugged > 1, "high", rugged_class),
+           road_den_class = if_else(c_road_den < -1, "low", "med"),
+           road_den_class = if_else(c_road_den > 1, "high", road_den_class))
+}
+
 trap_snare_lpa <- function(log_rho, log_gamma, p_unique, effort_per, n_trap_m1){
   log(pi) +
     (2 * (log_rho + log(effort_per) -
