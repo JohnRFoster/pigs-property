@@ -43,7 +43,10 @@ group_join_for_ml <- function(df, df_ecoregions){
   df |>
     group_by(propertyID, agrp_prp_id, start_dates, end_dates, st_name, cnty_name, farm_bill,
              alws_agrprop_id, property, primary_period, property_area_km2) |>
-    summarise(total_take = sum(take)) |>
+    summarise(total_take = sum(take),
+              n_units = sum(trap_count),
+              effort_per = sum(effort_per),
+              effort = sum(effort)) |>
     ungroup() |>
     mutate(take_density = total_take / property_area_km2,
            farm_bill = as.character(if_else(is.na(farm_bill), 0, farm_bill)),
