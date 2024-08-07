@@ -77,8 +77,8 @@ model_data <- model_data |> left_join(density)
 
 
 features <- c("cnty_name", "st_name", "farm_bill", "property_area_km2",
-              "total_take", "return_interval", "take_density", "methods_used",
-              "c_road_den", "c_rugged", "c_canopy", "ecoregion")
+              "total_take", "return_interval", "take_density", "methods_used", "n_units",
+              "c_road_den", "c_rugged", "c_canopy", "ecoregion", "effort", "effort_per")
 
 n_strata <- 3
 
