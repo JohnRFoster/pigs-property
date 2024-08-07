@@ -95,7 +95,7 @@ ml_data <- model_data |>
          rugged_strata = make_strata(c_rugged, breaks = n_strata),
          canopy_strata = make_strata(c_canopy, breaks = n_strata))
 
-split <- initial_split(ml_data, prop = 0.8)
+split <- initial_split(ml_data, prop = 0.8, strata = "take_density")
 df_train <- training(split)
 df_test <- testing(split)
 
@@ -116,7 +116,7 @@ hyp_vec <- c(0, 0.01, 0.1, 1, 10, 100)
 # hyperparameter grid
 hyper_grid <- expand_grid(
   eta = 0.1,
-  max_depth = 3,
+  max_depth = 3:7,
   min_child_weight = c(0.5, 1, 3),
   subsample = 0.5,
   colsample_bytree = 0.5,
