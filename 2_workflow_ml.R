@@ -86,10 +86,7 @@ ml_data <- model_data |>
   select(all_of(c(response, features))) |>
   rename(y = all_of(response)) |>
   filter(y > 0) |>
-  mutate(y = log(y),
-         road_dens_strata = make_strata(c_road_den, breaks = n_strata),
-         rugged_strata = make_strata(c_rugged, breaks = n_strata),
-         canopy_strata = make_strata(c_canopy, breaks = n_strata))
+  mutate(y = log(y))
 
 split <- initial_split(ml_data, strata = c("take_density"))
 df_train <- training(split)
@@ -260,10 +257,7 @@ data_ml_filter <- data_join3 |>
 
 oos_data <- group_join_for_ml(data_ml_filter, ecoregions)
 df_oos <- oos_data |>
-  select(all_of(features)) |>
-  mutate(road_dens_strata = make_strata(c_road_den, breaks = n_strata),
-         rugged_strata = make_strata(c_rugged, breaks = n_strata),
-         canopy_strata = make_strata(c_canopy, breaks = n_strata))
+  select(all_of(features))
 
 baked_oos <- bake(prepare, new_data = df_oos)
 
