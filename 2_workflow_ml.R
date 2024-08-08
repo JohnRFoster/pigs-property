@@ -16,7 +16,7 @@ config <- config::get(config = config_name)
 task_id <- 1
 
 ## choose response variable
-responses <- c("mean", "variance")
+responses <- c("0.5", "variance")
 response <- responses[task_id]
 
 objective <- "reg:squarederror"
@@ -82,23 +82,23 @@ features <- c("cnty_name", "st_name", "farm_bill", "property_area_km2",
 
 n_strata <- 3
 
-low_outlier <- quantile(model_data$mean, c(0.025))
-high_outlier <- quantile(model_data$mean, c(0.975))
+low_outlier <- quantile(model_data$`0.5`, c(0.025))
+high_outlier <- quantile(model_data$`0.5`, c(0.975))
+min_not_0 <- model_data |> filter(mean > 0) |> pull(mean) |> min()
 
 ml_data <- model_data |>
   select(all_of(c(response, features))) |>
   rename(y = all_of(response)) |>
-  filter(y > low_outlier,
-         y < high_outlier) |>
-  mutate(y = log(y),
+  mutate(y = y ^ (1/3),
          road_dens_strata = make_strata(c_road_den, breaks = n_strata),
          rugged_strata = make_strata(c_rugged, breaks = n_strata),
          canopy_strata = make_strata(c_canopy, breaks = n_strata))
 
-split <- initial_split(ml_data, prop = 0.8, strata = "take_density")
+split <- initial_split(ml_data, prop = 0.8)
 df_train <- training(split)
 df_test <- testing(split)
 
+ml_data <- ml_data |> step_log("y", signed = TRUE)
 blueprint <- my_recipe(df_train)
 prepare <- prep(blueprint, training = df_train)
 baked_train <- bake(prepare, new_data = df_train)
@@ -108,7 +108,7 @@ X <- baked_train |>
   select(-y) |>
   as.matrix()
 Y <- baked_train |> pull(y)
-
+hist(Y)
 set.seed(123)
 
 hyp_vec <- c(0, 0.01, 0.1, 1, 10, 100)
