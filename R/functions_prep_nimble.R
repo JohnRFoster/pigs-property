@@ -404,17 +404,17 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 1000){
 
   with(append(constants_nimble, data_nimble), {
 
-    beta1 <- jitter(c(-1, 0.5, 1.5, -2, 0))
+    beta1 <- jitter(c(-0.75, 0, 1.75, -1, 0))
     beta_p <- matrix(jitter(
-      c(2,  1,   1,
-        -1,  0, 1,
-        2,    -2,    0,
-        -4, -2,    1,
-        -0.5,  2.5,    0)),
+      c(3,   1,     1,
+       -1,   0,     1,
+      1.5,   0, -0.75,
+       -4,  -2,     2,
+     -0.5, 2.5,  -0.5)),
       n_method, m_p)
-    p_mu <- jitter(c(-3, -3))
-    log_gamma <- jitter(c(-3, -1.5))
-    log_rho <- jitter(c(2, 2, 1.5, -0.5, 0))
+    p_mu <- jitter(c(-3.5, -2.5))
+    log_gamma <- jitter(c(-3, -2))
+    log_rho <- jitter(c(2, 2.5, 1.75, -0.75, -0.25))
     psi_phi <- runif(1, 0.6, 1)
     phi_mu <- runif(1, 0.7, 0.8)
     mean_ls <- round(runif(1, 11, 12))
