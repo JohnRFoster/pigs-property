@@ -242,9 +242,10 @@ get_prior_hyperparams <- function(informed, posterior_path = NULL, data_repo = N
 
     phi_mu <- get_vec(post, "phi_mu")
     mu <- phi_mu$mu
-    psi <- phi_mu$tau
-    alpha <- mu * psi
-    beta <- (1 - mu) * psi
+    v <- 1 / phi_mu$tau
+    w <- ((mu * (1 - mu)) / v) - 1
+    alpha <- mu * w
+    beta <- (1 - mu) * w
 
     psi_phi <- get_vec(post, "psi_phi")
     mu <- psi_phi$mu
