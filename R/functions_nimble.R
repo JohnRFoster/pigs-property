@@ -128,6 +128,15 @@ collate_mcmc_chunks <- function(dest, start = 1){
     store_mcmc[[j]] <- as.matrix(mcmc[[j]])
   }
 
+  state_rds <- file.path(dest, mcmc_dirs[1], state_file_name)
+  if(file.exists(state_rds)){
+    state_count <- 1
+    mcmc <- read_rds(state_rds)
+    for(j in seq_len(n_chains)){
+      store_mcmc_state[[j]] <- as.matrix(mcmc[[j]])
+    }
+  }
+
   if(length(mcmc_dirs) >= 2){
 
     use_pb <- if_else(length(mcmc_dirs) == 2, FALSE, TRUE)
