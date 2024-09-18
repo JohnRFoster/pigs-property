@@ -41,7 +41,6 @@ while(does_not_exist){
 }
 
 path <- file.path(iterative_dir, read_dir, "modelData.rds")
-path <- file.path(iterative_dir, "13_posterior", "modelData.rds")
 data <- read_rds(path) |>
   mutate(method = if_else(method == "FIREARMS", "Firearms", method),
          method = if_else(method == "FIXED WING", "Fixed wing", method),
@@ -51,8 +50,6 @@ data <- read_rds(path) |>
 
 path <- file.path(iterative_dir, read_dir, "densitySummaries.rds")
 density <- read_rds(path)
-
-
 
 # want landcover for ML model
 land_cover <- data |>
@@ -86,19 +83,27 @@ low_outlier <- quantile(model_data$`0.5`, c(0.025))
 high_outlier <- quantile(model_data$`0.5`, c(0.975))
 min_not_0 <- model_data |> filter(mean > 0) |> pull(mean) |> min()
 
+make_c_strata <- function(df){
+  df |>
+    mutate(road_dens_strata = if_else(c_road_den < quantile(c_road_den, 0.25), "low", "avg"),
+           road_dens_strata = if_else(c_road_den > quantile(c_road_den, 0.75), "high", road_dens_strata),
+           canopy_strata = if_else(c_canopy < quantile(c_canopy, 0.25), "low", "avg"),
+           canopy_strata = if_else(c_canopy > quantile(c_canopy, 0.75), "high", canopy_strata),
+           rugged_strata = if_else(c_rugged < quantile(c_rugged, 0.25), "low", "avg"),
+           rugged_strata = if_else(c_rugged > quantile(c_rugged, 0.75), "high", rugged_strata))
+}
+
 ml_data <- model_data |>
   select(all_of(c(response, features))) |>
   rename(y = all_of(response)) |>
-  mutate(y = y ^ (1/3),
-         road_dens_strata = make_strata(c_road_den, breaks = n_strata),
-         rugged_strata = make_strata(c_rugged, breaks = n_strata),
-         canopy_strata = make_strata(c_canopy, breaks = n_strata))
+  mutate(y = y ^ (1/3)) |>
+  make_c_strata()
+
 
 split <- initial_split(ml_data, prop = 0.8)
 df_train <- training(split)
 df_test <- testing(split)
 
-ml_data <- ml_data |> step_log("y", signed = TRUE)
 blueprint <- my_recipe(df_train)
 prepare <- prep(blueprint, training = df_train)
 baked_train <- bake(prepare, new_data = df_train)
@@ -116,8 +121,8 @@ hyp_vec <- c(0, 0.01, 0.1, 1, 10, 100)
 # hyperparameter grid
 hyper_grid <- expand_grid(
   eta = 0.1,
-  max_depth = 3:7,
-  min_child_weight = c(0.5, 1, 3),
+  max_depth = 3,
+  min_child_weight = 0.5,
   subsample = 0.5,
   colsample_bytree = 0.5,
   gamma = hyp_vec,
@@ -210,6 +215,9 @@ message("RMSE: ", round(rmse, 2))
 message("R2: ", round(r2, 2))
 message("===============================")
 
+plot(df_pred$y, df_pred$pred)
+abline(0, 1)
+
 out_list <- list(
   baked_train = baked_train,
   baked_test = df_pred,
@@ -265,9 +273,7 @@ data_ml_filter <- data_join3 |>
 oos_data <- group_join_for_ml(data_ml_filter, ecoregions)
 df_oos <- oos_data |>
   select(all_of(features)) |>
-  mutate(road_dens_strata = make_strata(c_road_den, breaks = n_strata),
-         rugged_strata = make_strata(c_rugged, breaks = n_strata),
-         canopy_strata = make_strata(c_canopy, breaks = n_strata))
+  make_c_strata()
 
 baked_oos <- bake(prepare, new_data = df_oos)
 
@@ -278,9 +284,5 @@ out_list$oos_pred <- oos_pred
 ml_dir <- config$out_ml
 if(!dir.exists(ml_dir)) dir.create(ml_dir, recursive = TRUE, showWarnings = FALSE)
 write_rds(out_list, file.path(ml_dir, paste0(response, "_mlFits.rds")))
-
-
-
-
 
 
