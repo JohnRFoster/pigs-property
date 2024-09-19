@@ -58,6 +58,7 @@ land_cover <- data |>
 
 # want ecoregion data for ML
 data_repo <- config$data_repo
+
 filename <- file.path(data_repo, 'ecoregions', 'Cnty.lower48.EcoRegions.Level2.shp')
 ecoregions <- terra::vect(filename) |>
   as_tibble() |>
@@ -96,8 +97,8 @@ make_c_strata <- function(df){
 ml_data <- model_data |>
   select(all_of(c(response, features))) |>
   rename(y = all_of(response)) |>
-  mutate(y = y ^ (1/3)) |>
-  make_c_strata()
+  mutate(y = y ^ (1/3)) #|>
+  # make_c_strata()
 
 
 split <- initial_split(ml_data, prop = 0.8)
@@ -218,6 +219,9 @@ message("===============================")
 plot(df_pred$y, df_pred$pred)
 abline(0, 1)
 
+plot(df_pred$y, df_pred$pred)
+abline(0, 1)
+
 out_list <- list(
   baked_train = baked_train,
   baked_test = df_pred,
@@ -236,7 +240,34 @@ file <- file.path(data_repo, config$file_mis)
 interval <- config$interval
 dev <- config$dev
 
-data_mis <- get_data(file, interval, data_repo)
+all_take <- read_csv(file, show_col_types = FALSE) |>
+  filter(start.date >= lubridate::ymd("2014-01-01")) |>
+  mutate(cnty_name = if_else(grepl("ST ", cnty_name), gsub("ST ", "ST. ", cnty_name), cnty_name),
+         cnty_name = if_else(grepl("KERN", cnty_name), "KERN", cnty_name)) |>
+  mutate(property_area_km2 = round(property.size * 0.00404686, 2)) |>
+  filter(property_area_km2 >= 1.8,
+         st_name != "HAWAII") |>
+  mutate(effort = if_else(cmp_name %in% c("TRAPS, CAGE", "SNARE"), cmp.days, cmp.hours),
+         effort_per = effort / cmp.qty,
+         cmp_name = if_else(cmp_name == "TRAPS, CAGE", "TRAPS", cmp_name)) |>
+  rename(method = cmp_name,
+         trap_count = cmp.qty) |>
+  select(-wt_work_date, -hours, -cmp.hours, -cmp.days) |>
+  distinct() |>
+  mutate(propertyID = paste0(agrp_prp_id, "-", alws_agrprop_id)) |>
+  arrange(propertyID, start.date, end.date)
+
+data_mis <- create_primary_periods(all_take, interval, data_repo) |>
+  resolve_duplicate() |>         # resolve duplicate property areas
+  order_interval() |>            # determine midpoints from start/end dates
+  order_stochastic() |>          # randomly order events
+  rename(statefp = st_gsa_state_cd,
+         countyfp = cnty_gsa_cnty_cd) |>
+  mutate(countyfp = sprintf("%03d", countyfp),
+         countyfp = ifelse(cnty_name == "HUMBOLDT (E)", "013", countyfp),
+         county_code = as.numeric(paste0(statefp, countyfp)),
+         county_code = sprintf("%05d", county_code)) |>
+  rename(primary_period = timestep)
 
 ## observation covariates ----
 file <- file.path(data_repo, config$file_land)
@@ -247,12 +278,12 @@ data_join <- left_join(data_mis, data_obs,
                        by = join_by(county_code))
 
 ## filter missing states ----
-data_join2 <- data_join |>
-  filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS"))
+data_join2 <- data_join #|>
+  # filter(!st_name %in% c("CALIFORNIA", "ALABAMA", "ARIZONA", "ARKANSAS"))
 
-targets::tar_assert_true(!any(is.na(data_join2$c_road_den)))
-targets::tar_assert_true(!any(is.na(data_join2$c_rugged)))
-targets::tar_assert_true(!any(is.na(data_join2$c_canopy)))
+# targets::tar_assert_true(!any(is.na(data_join2$c_road_den)))
+# targets::tar_assert_true(!any(is.na(data_join2$c_rugged)))
+# targets::tar_assert_true(!any(is.na(data_join2$c_canopy)))
 
 ## join with farm bill properties ----
 data_farm_bill <- read_csv(file.path(data_repo, "All_FB_Agreements_long_2024-05-30.csv"))
@@ -272,8 +303,8 @@ data_ml_filter <- data_join3 |>
 
 oos_data <- group_join_for_ml(data_ml_filter, ecoregions)
 df_oos <- oos_data |>
-  select(all_of(features)) |>
-  make_c_strata()
+  select(all_of(features)) #|>
+  # make_c_strata()
 
 baked_oos <- bake(prepare, new_data = df_oos)
 
