@@ -311,6 +311,7 @@ baked_oos <- bake(prepare, new_data = df_oos)
 oos_pred <- make_prediction(fit, baked_oos)
 
 out_list$oos_pred <- oos_pred
+out_list$oos_data <- oos_data
 
 ml_dir <- config$out_ml
 if(!dir.exists(ml_dir)) dir.create(ml_dir, recursive = TRUE, showWarnings = FALSE)
