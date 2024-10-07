@@ -119,12 +119,13 @@ if(first_fit){ # run first fit
   last_fit_properties <- unique(data_for_nimble$propertyID)
   all_properties <- unique(data_final$propertyID)
   n_total_properties <- length(all_properties)
-  n_properties_to_fit <- n_total_properties - length(unique(last_fit$propertyID))
+  n_properties_to_fit <- n_total_properties - length(unique(data_for_nimble$propertyID))
 
   to_fit_properties <- setdiff(all_properties, last_fit_properties)
 
   sample_size <- np
 
+  set.seed(9)
   property_order <- tibble(
     property = to_fit_properties,
     round = sample.int(ceiling(n_properties_to_fit/sample_size) + 1,
