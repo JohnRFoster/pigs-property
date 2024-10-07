@@ -114,16 +114,27 @@ if(first_fit){ # run first fit
     fit = TRUE,
     n_properties = np,
     dir = dest_posterior
-  ) |>
-    bind_rows(
-      tibble(
-        property = not_fit_properties,
-        round = 0,
-        fit = NA,
-        n_properties = NA,
-        dir = NA
-      )
-    )
+  )
+
+  last_fit_properties <- unique(data_for_nimble$propertyID)
+  all_properties <- unique(data_final$propertyID)
+  n_total_properties <- length(all_properties)
+  n_properties_to_fit <- n_total_properties - length(unique(last_fit$propertyID))
+
+  to_fit_properties <- setdiff(all_properties, last_fit_properties)
+
+  sample_size <- np
+
+  property_order <- tibble(
+    property = to_fit_properties,
+    round = sample.int(ceiling(n_properties_to_fit/sample_size) + 1,
+                       length(to_fit_properties), replace = TRUE) + 1,
+    fit = NA,
+    n_properties = NA,
+    dir = NA
+  )
+
+  fit_successfully <- bind_rows(fit_successfully, property_order)
 
   write_rds(fit_successfully, file.path(data_repo, "iterativeFitting.rds"))
 
@@ -146,22 +157,14 @@ if(first_fit){ # run first fit
   fit_successfully <- read_rds(file.path(data_repo, "iterativeFitting.rds"))
   good_fits <- fit_successfully |> filter(fit)
 
-  last_good_fit <- good_fits |>
-    filter(round == max(round)) |>
-    pull(dir) |>
-    unique() |>
-    basename()
-
-  last_fit <- read_rds(file.path(out_dir, last_good_fit, "modelData.rds"))
-  n_total_properties <- length(unique(data_final$propertyID))
-  n_properties_to_fit <- n_total_properties - length(unique(last_fit$propertyID))
-
   start <- good_fits |>
     pull(round) |>
-    max() +
+    min() +
     1
 
-  for(i in start:n_properties_to_fit){
+  end <- max(fit_successfully$round)
+
+  for(i in start:end){
 
     # need to add a check so that if a property failed, we don't try to read the posterior from that fit
     # need to keep track of posterior file paths and order of properties
@@ -176,14 +179,21 @@ if(first_fit){ # run first fit
     last_good_fit <- basename(post_path)
 
     data_last_fit <- read_rds(file.path(out_dir, last_good_fit, "modelData.rds"))
-    data_for_nimble <- get_next_property(data_final, data_last_fit) |>
+    old_properies <- unique(data_last_fit$propertyID)
+
+    current_properties <- fit_successfully |>
+      filter(round == i) |>
+      pull(property)
+
+    data_for_nimble <- data_final |>
+      filter(propertyID %in% c(old_properies, current_properties)) |>
       mutate(primary_period = primary_period - min(primary_period) + 1)
 
     message("\n==========================================================")
     print_info(data_for_nimble)
     message("==========================================================\n")
 
-    np <- length(data_for_nimble$propertyID)
+    np <- length(unique(data_for_nimble$propertyID))
     dest_mcmc <- file.path(out_dir, paste0(i, "_mcmc"))
     dest_posterior <- file.path(out_dir, paste0(i, "_posterior"))
 
@@ -197,13 +207,10 @@ if(first_fit){ # run first fit
       monitors_add,
       custom_samplers)
 
-    prop <- last(data_for_nimble$propertyID)
-
     fit_successfully <- fit_successfully |>
-      mutate(round = if_else(property == prop, i, round),
-             fit = if_else(property == prop, finished, fit),
-             n_properties = if_else(property == prop, np, n_properties),
-             dir = if_else(property == prop, dest_posterior, dir))
+      mutate(fit = if_else(property %in% current_properties, finished, fit),
+             n_properties = if_else(property %in% current_properties, np, n_properties),
+             dir = if_else(property %in% current_properties, dest_posterior, dir))
 
     write_rds(fit_successfully, file.path(data_repo, "iterativeFitting.rds"))
 
