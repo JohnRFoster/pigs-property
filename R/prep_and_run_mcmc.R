@@ -1,6 +1,6 @@
 
 prep_and_run_mcmc <- function(informed, post_path, data_repo, dest_mcmc,
-                              dest_posterior, df, monitors_add, custom_samplers){
+                              dest_posterior, df, monitors_add, custom_samplers, post_file = NULL){
 
   source("R/nimble_removal_model.R")
   source("R/functions_prep_nimble.R")
@@ -28,8 +28,14 @@ prep_and_run_mcmc <- function(informed, post_path, data_repo, dest_mcmc,
 
   inits <- list()
   for(i in seq_len(n_chains)){
+
     set.seed(i)
-    inits[[i]] <- nimble_inits(constants, data)
+
+    if(!is.null(post_file)){
+      inits[[i]] <- nimble_inits_sample(post_file, constants, data)
+    } else {
+      inits[[i]] <- nimble_inits(constants, data)
+    }
   }
 
   test_build(modelCode, constants, data, inits = inits[[1]])

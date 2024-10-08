@@ -466,8 +466,7 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 1000){
 
 nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, buffer = 500){
 
-  rds <- read_rds(posterior_file)
-  params <- as_tibble(as.matrix(rds$params))
+  params <- read_rds(posterior_file)
   draw <- sample.int(nrow(params), 1)
   init <- params |> slice(draw)
 
@@ -499,11 +498,12 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
   a <- phi_mu * psi_phi
   b <- (1 - phi_mu) * psi_phi
   mean_lpy <- 1
+  mean_ls <- exp(log_nu)
   zeta <- mean_lpy / 365 * pp_len * mean_ls
   N <- phi <- lambda <- rep(NA, max(nH, na.rm = TRUE))
   n_init <- rep(NA, n_property)
   for(i in 1:n_property){
-    n_init[i] <- round(exp(unique_log_areas[i])*5) + sum(rem[i, ], na.rm = TRUE) * 2
+    n_init[i] <- round(exp(unique_log_areas[i])) + sum(rem[i, ], na.rm = TRUE)
     # if(n_init[i] > 5000) n_init[i] <- rpois(1, 500)
     N[nH[i, 1]] <- n_init[i]
     for(j in 2:n_time_prop[i]){

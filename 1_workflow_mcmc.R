@@ -206,7 +206,8 @@ if(first_fit){ # run first fit
       dest_posterior,
       data_for_nimble,
       monitors_add,
-      custom_samplers)
+      custom_samplers,
+      post_file = file.path(post_path, "posteriorSamples.rds"))
 
     fit_successfully <- fit_successfully |>
       mutate(fit = if_else(property %in% current_properties, finished, fit),
