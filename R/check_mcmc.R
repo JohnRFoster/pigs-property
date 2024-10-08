@@ -19,7 +19,7 @@ source("R/functions_prep_nimble.R")
 config_name <- "hpc_dev"
 config <- config::get(config = config_name)
 
-out_dir <- "/lustrefs/ceah/feral-swine/property-fits/iterativeFits"
+out_dir <- config$out_dir
 files_in_out_dir <- list.files(out_dir)
 n_props_fit <- as.numeric(stringr::str_extract(files_in_out_dir, "\\d*(?=\\D)"))
 last_fit <- max(n_props_fit)
