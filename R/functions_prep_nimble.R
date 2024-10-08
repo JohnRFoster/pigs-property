@@ -488,12 +488,12 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
   log_gamma <- get_vec(init, "log_gamma")
   log_rho <- get_vec(init, "log_rho")
 
-  unique_log_areas <- data$unique_log_areas
-  rem <- constants$rem
-  n_property <- constants$n_property
-  nH <- constants$nH
-  n_time_prop <- constants$n_time_prop
-  pp_len <- constants$pp_len
+  unique_log_areas <- data_nimble$unique_log_areas
+  rem <- constants_nimble$rem
+  n_property <- constants_nimble$n_property
+  nH <- constants_nimble$nH
+  n_time_prop <- constants_nimble$n_time_prop
+  pp_len <- constants_nimble$pp_len
 
   a <- phi_mu * psi_phi
   b <- (1 - phi_mu) * psi_phi
