@@ -41,7 +41,7 @@ group_join_for_ml <- function(df, df_ecoregions){
     distinct()
 
   df |>
-    group_by(propertyID, agrp_prp_id, start_dates, end_dates, st_name, cnty_name, farm_bill,
+    group_by(propertyID, agrp_prp_id, start_dates, end_dates, st_name, cnty_name, farm_bill, county_code,
              alws_agrprop_id, property, primary_period, property_area_km2) |>
     summarise(total_take = sum(take),
               n_units = sum(trap_count),
