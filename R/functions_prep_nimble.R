@@ -408,10 +408,10 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 1000){
     beta1 <- jitter(c(-0.75, 0, 1.75, -1, 0))
     beta_p <- matrix(jitter(
       c(3,   1,     1,
-       -1,   0,     1,
-      1.5,   0, -0.75,
-       -4,  -2,     2,
-     -0.5, 2.5,  -0.5)),
+        -1,   0,     1,
+        1.5,   0, -0.75,
+        -4,  -2,     2,
+        -0.5, 2.5,  -0.5)),
       n_method, m_p)
     p_mu <- jitter(c(-3.5, -2.5))
     log_gamma <- jitter(c(-3, -2))
@@ -538,10 +538,3 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
     log_zeta = log(zeta)
   )
 }
-
-
-
-
-
-
-
