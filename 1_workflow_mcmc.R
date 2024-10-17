@@ -160,7 +160,7 @@ if(first_fit){ # run first fit
 
   start <- good_fits |>
     pull(round) |>
-    min() +
+    max() +
     1
 
   end <- max(fit_successfully$round)
