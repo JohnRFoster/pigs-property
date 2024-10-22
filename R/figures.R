@@ -133,13 +133,13 @@ plot_post <- function(dfg, xlab, title){
 
   dfg |>
     ggplot() +
-    aes(x = `50%`, xmin = `5%`, xmax = `95%`, y = method, color = distribution) +
+    aes(x = `50%`, xmin = `5%`, xmax = `95%`, y = method) +
     geom_linerange(position = position_dodge(width = 0.5)) +
     # geom_linerange(aes(xmin = `25%`, xmax = `75%`),
     #                linewidth = 3,
     #                position = position_dodge(width = 0.5)) +
     geom_point(position = position_dodge(width = 0.5), size = 4) +
-    scale_color_manual(values = dist_colors) +
+    # scale_color_manual(values = dist_colors) +
     labs(y = "Method",
          x = xlab,
          title = title,
@@ -151,9 +151,8 @@ plot_post <- function(dfg, xlab, title){
 
 get_posterior <- function(df, y){
   dfp <- df |>
-    select(distribution, starts_with(y)) |>
-    # mutate(distribution = "Posterior") |>
-    pivot_longer(cols = -distribution,
+    select(starts_with(y)) |>
+    pivot_longer(cols = everything(),
                  names_to = "node",
                  values_to = "y")
 
@@ -164,11 +163,10 @@ get_posterior <- function(df, y){
   return(dfp)
 }
 
-join_summarise_methods <- function(df, df_prior, df_method_names){
+join_summarise_methods <- function(df, df_method_names){
   df |>
-    bind_rows(df_prior) |>
     left_join(df_method_names) |>
-    group_by(distribution, method) |>
+    group_by(method) |>
     summarise(`5%` = quantile(y, 0.05),
               `25%` = quantile(y, 0.25),
               `50%` = quantile(y, 0.5),
