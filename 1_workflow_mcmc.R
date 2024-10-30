@@ -76,21 +76,21 @@ print_info(data_final)
 
 params_check <- config$params_check
 out_dir <- config$out_dir
-files_in_out_dir <- list.files(out_dir)
-first_fit <- length(files_in_out_dir) == 0
-
+dest_mcmc <- file.path(out_dir, paste0(1, "_mcmc"))
+dest_posterior <- file.path(out_dir, paste0(1, "_posterior"))
 monitors_add <- "N"
 custom_samplers <- NULL
 
+
 finished <- prep_and_run_mcmc(
-  informed,
-  NULL,
-  data_repo,
-  dest_mcmc,
-  dest_posterior,
-  data_final,
-  monitors_add,
-  custom_samplers)
+  informed = FALSE,
+  post_path = NULL,
+  data_repo = data_repo,
+  dest_mcmc = dest_mcmc,
+  dest_posterior = dest_posterior,
+  df = data_final,
+  monitors_add = monitors_add,
+  custom_samplers = custom_samplers)
 
 source("R/check_mcmc.R")
 
