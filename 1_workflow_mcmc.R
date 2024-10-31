@@ -58,15 +58,6 @@ data_final <- left_join(data_join2, farm_bill_properties) |>
          county = as.numeric(as.factor(county_code))) |>
   filter(farm_bill == 1)
 
-
-good_props <- data_final |>
-  filter(end_dates >= "2019-12-24") |>
-  pull(propertyID) |>
-  unique()
-
-data_for_nimble <- data_final |>
-  filter(propertyID %in% good_props)
-
 print_info <- function(df){
   fit_properties <- length(unique(df$propertyID))
   nfb <- df |>
@@ -81,8 +72,7 @@ print_info <- function(df){
   message("=======================================")
 }
 
-# print_info(data_final)
-print_info(data_for_nimble)
+print_info(data_final)
 
 params_check <- config$params_check
 out_dir <- config$out_dir
@@ -98,7 +88,7 @@ finished <- prep_and_run_mcmc(
   data_repo = data_repo,
   dest_mcmc = dest_mcmc,
   dest_posterior = dest_posterior,
-  df = data_for_nimble,
+  df = data_final,
   monitors_add = monitors_add,
   custom_samplers = custom_samplers)
 
