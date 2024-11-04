@@ -4,8 +4,8 @@
 #SBATCH --partition=cpu_compute         # good enough for what I need
 #SBATCH --cpus-per-task=2               # for a multithredded job
 #SBATCH --mem=24g                       # memory
-#SBATCH --job-name=check_300                 # job name
-#SBATCH --output=outfiles/check_300.txt      # output file
+#SBATCH --job-name=farmBill                 # job name
+#SBATCH --output=outfiles/farmBill.txt      # output file
 
 module add R
-Rscript R/check_mcmc.R
+Rscript 1_workflow_mcmc.R
