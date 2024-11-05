@@ -40,6 +40,11 @@ continue_mcmc <- function(mcmc, effective_size, max_psrf, verbose){
   psrf <- gelman.diag(mcmc, multivariate = FALSE)$psrf
   effective_samples <- effectiveSize(mcmc)
 
+  if(verbose){
+    print(psrf)
+    print(effective_samples)
+  }
+
   converged <- all(psrf[, 2] < 1.1)
   enough_samples <- all(effective_samples >= effective_size)
   funky <- any(is.nan(psrf)) | max(psrf) > max_psrf
@@ -56,11 +61,6 @@ continue_mcmc <- function(mcmc, effective_size, max_psrf, verbose){
   if(funky){
     message("\n*** Something is wrong with the mcmc! ***")
     done <- FALSE
-  }
-
-  if(verbose){
-    print(psrf)
-    print(effective_samples)
   }
 
   return(list(
