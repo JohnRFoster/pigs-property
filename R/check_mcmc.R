@@ -38,6 +38,8 @@ message("Burnin: ", burnin)
 if(is.na(burnin)) burnin <- round(total_iter / 2)
 params_burnin <- window(params_mcmc_list, start = burnin)
 
+print(str(params_burnin))
+
 # calculate psrf (convergence stat) and effective sample size
 diagnostic <- continue_mcmc(params_burnin, effective_size = 1000, max_psrf = 15, verbose = TRUE)
 
