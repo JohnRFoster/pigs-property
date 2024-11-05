@@ -35,10 +35,8 @@ n_chains <- length(params_mcmc_list)
 GBR <- gelman.plot(params_mcmc_list)
 burnin <- GBR$last.iter[tail(which(apply(GBR$shrink[, , 2] > 1.1, 1, any)), 1) + 1]
 message("Burnin: ", burnin)
-if(is.na(burnin)) burnin <- round(total_iter / 2)
+if(is.na(burnin) | burnin >= total_iter * 0.75) burnin <- round(total_iter / 2)
 params_burnin <- window(params_mcmc_list, start = burnin)
-
-print(str(params_burnin))
 
 # calculate psrf (convergence stat) and effective sample size
 diagnostic <- continue_mcmc(params_burnin, effective_size = 1000, max_psrf = 15, verbose = TRUE)
