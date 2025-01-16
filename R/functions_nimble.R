@@ -93,7 +93,7 @@ test_build <- function(code, constants, data, inits){
     n <- round(N_model - y_sum[i])
     if(n <= 0){
       print(i)
-      Rmodel$N[nH_p[i]] <- N_model + (abs(n) + 2)
+      Rmodel$N[nH_p[i]] <- N_model + (abs(n) + 200)
     }
   }
 

@@ -77,7 +77,7 @@ dynamic_filter <- function(df){
     filter(two_plus_takes) |>
     group_by(propertyID) |>
     arrange(propertyID, timestep) |>
-    unique() |>
+    distinct() |>
     mutate(n_timesteps = length(unique(timestep))) |>
     filter(n_timesteps >= 2) |>
     ungroup() |>
