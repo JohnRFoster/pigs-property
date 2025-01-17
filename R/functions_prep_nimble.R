@@ -464,7 +464,7 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 1000){
   })
 }
 
-nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, buffer = 500){
+nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, buffer = 1000){
 
   params <- read_rds(posterior_file)
   draw <- sample.int(nrow(params), 1)
