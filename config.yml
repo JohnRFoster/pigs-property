@@ -16,4 +16,5 @@ hpc_dev:
   data_repo: "/lustrefs/ceah/feral-swine/data"
   out_dir: "/lustrefs/ceah/feral-swine/property-fits/iterativeFits2"
   out_ml: "/lustrefs/ceah/feral-swine/property-fits/ml"
+  out_delta: "/lustrefs/ceah/feral-swine/property-fits/deltaDensity"
   n_iter: 50000
