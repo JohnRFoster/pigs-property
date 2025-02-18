@@ -66,7 +66,7 @@ n_return <- data |>
   ungroup() |>
   rename(methods_used = method)
 
-model_data <- data |>
+data_grouped <- data |>
   group_by(propertyID, agrp_prp_id, start_dates, end_dates, st_name, cnty_name, farm_bill,
            alws_agrprop_id, property, primary_period, property_area_km2, county_code) |>
   summarise(total_take = sum(take),
@@ -79,15 +79,11 @@ model_data <- data |>
   left_join(n_return) |>
   mutate(year = year(end_dates))
 
-postal_codes_df <- read_csv("../pigs-statistical/data/counties/statePostalCodes.csv")
-postal_codes <- postal_codes_df |>
-  mutate(st_name = toupper(State))
-
-data_mis <- left_join(model_data, postal_codes) |>
+data_mis <- data_grouped |>
   filter(end_dates <= cutoff_date) |>
   mutate(abundance_estimate = round(`0.5` * property_area_km2)) |>
   rename(density_estimate = `0.5`) |>
-  select(propertyID, end_dates, year, st_name, Postal, cnty_name, county_code,
+  select(propertyID, end_dates, year, st_name, cnty_name, county_code,
          property_area_km2, total_take, take_density, density_estimate, abundance_estimate,
          n_events, methods_used)
 
