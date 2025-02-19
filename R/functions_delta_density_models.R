@@ -67,13 +67,13 @@ G_D <- function(d, m, f, k_sum_take, k_state_year){
 
 GS_T <- function(d, m, f){
   mod <- gam(delta_density ~
-        s(sum_take, m = 2) +
-        s(sum_events, m = 2) +
-        s(property_area_km2, m = 2) +
-        s(c_road_den, m = 2) +
-        s(c_rugged, m = 2) +
-        s(c_canopy, m = 2) +
-        s(c_prop.pub.land, m = 2) +
+        s(sum_take, bs = "tp", m = 2) +
+        s(sum_events, bs = "tp", m = 2) +
+        s(property_area_km2, bs = "tp", m = 2) +
+        s(c_road_den, bs = "tp", m = 2) +
+        s(c_rugged, bs = "tp", m = 2) +
+        s(c_canopy, bs = "tp", m = 2) +
+        s(c_prop.pub.land, bs = "tp", m = 2) +
         s(sum_take, state_year, bs = "fs", m = 2) +
         s(sum_events, state_year, bs = "fs", m = 2),
       method = m,
@@ -84,13 +84,13 @@ GS_T <- function(d, m, f){
 
 GS_M <- function(d, m, f){
   mod <- gam(delta_density ~
-        s(avg_take, m = 2) +
-        s(avg_events, m = 2) +
-        s(property_area_km2, m = 2) +
-        s(c_road_den, m = 2) +
-        s(c_rugged, m = 2) +
-        s(c_canopy, m = 2) +
-        s(c_prop.pub.land, m = 2) +
+        s(avg_take, bs = "tp", m = 2) +
+        s(avg_events, bs = "tp", m = 2) +
+        s(property_area_km2, bs = "tp", m = 2) +
+        s(c_road_den, bs = "tp", m = 2) +
+        s(c_rugged, bs = "tp", m = 2) +
+        s(c_canopy, bs = "tp", m = 2) +
+        s(c_prop.pub.land, bs = "tp", m = 2) +
         s(avg_take, state_year, bs = "fs", m = 2) +
         s(avg_events, state_year, bs = "fs", m = 2),
       method = m,
@@ -101,13 +101,13 @@ GS_M <- function(d, m, f){
 
 GS_D <- function(d, m, f){
   mod <- gam(delta_density ~
-        s(delta_take, m = 2) +
-        s(delta_events, m = 2) +
-        s(property_area_km2, m = 2) +
-        s(c_road_den, m = 2) +
-        s(c_rugged, m = 2) +
-        s(c_canopy, m = 2) +
-        s(c_prop.pub.land, m = 2) +
+        s(delta_take, bs = "tp", m = 2) +
+        s(delta_events, bs = "tp", m = 2) +
+        s(property_area_km2, bs = "tp", m = 2) +
+        s(c_road_den, bs = "tp", m = 2) +
+        s(c_rugged, bs = "tp", m = 2) +
+        s(c_canopy, bs = "tp", m = 2) +
+        s(c_prop.pub.land, bs = "tp", m = 2) +
         s(delta_take, state_year, bs = "fs", m = 2) +
         s(delta_events, state_year, bs = "fs", m = 2),
       method = m,
@@ -239,8 +239,8 @@ I_M <- function(d, m, f, k_state_year){
         s(c_rugged, bs = "tp", m = 2) +
         s(c_canopy, bs = "tp", m = 2) +
         s(c_prop.pub.land, bs = "tp", m = 2) +
-        s(avg_take, by = state_year, bs = "fs", m = 1) +
-        s(avg_events, by = state_year, bs = "fs", m = 1) +
+        s(avg_take, by = state_year, bs = "fs", m = 2) +
+        s(avg_events, by = state_year, bs = "fs", m = 2) +
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
@@ -256,8 +256,8 @@ I_D <- function(d, m, f, k_state_year){
         s(c_rugged, bs = "tp", m = 2) +
         s(c_canopy, bs = "tp", m = 2) +
         s(c_prop.pub.land, bs = "tp", m = 2) +
-        s(delta_take, by = state_year, bs = "fs", m = 1) +
-        s(delta_events, by = state_year, bs = "fs", m = 1) +
+        s(delta_take, by = state_year, bs = "fs", m = 2) +
+        s(delta_events, by = state_year, bs = "fs", m = 2) +
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
