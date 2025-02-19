@@ -207,9 +207,9 @@ if(task_id == 9)  GI_T(model_data, method, family, k_state_year, file.path(dest,
 if(task_id == 10) GI_M(model_data, method, family, k_state_year, file.path(dest, "GI_M.rds"))
 if(task_id == 11) GI_D(model_data, method, family, k_state_year, file.path(dest, "GI_D.rds"))
 
-if(task_id == 12) S_T(model_data, method, family, k_state_year, file.path(dest, "S_T.rds"))
-if(task_id == 13) S_M(model_data, method, family, k_state_year, file.path(dest, "S_M.rds"))
-if(task_id == 14) S_D(model_data, method, family, k_state_year, file.path(dest, "S_D.rds"))
+if(task_id == 12) S_T(model_data, method, family, file.path(dest, "S_T.rds"))
+if(task_id == 13) S_M(model_data, method, family, file.path(dest, "S_M.rds"))
+if(task_id == 14) S_D(model_data, method, family, file.path(dest, "S_D.rds"))
 
 if(task_id == 15) I_T(model_data, method, family, k_state_year, file.path(dest, "I_T.rds"))
 if(task_id == 16) I_M(model_data, method, family, k_state_year, file.path(dest, "I_M.rds"))
