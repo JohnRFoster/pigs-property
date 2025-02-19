@@ -212,8 +212,8 @@ if(task_id == 13) S_M(model_data, method, family, k_state_year, file.path(dest, 
 if(task_id == 14) S_D(model_data, method, family, k_state_year, file.path(dest, "S_D.rds"))
 
 if(task_id == 15) I_T(model_data, method, family, k_state_year, file.path(dest, "I_T.rds"))
-if(task_id == 16) I_T(model_data, method, family, k_state_year, file.path(dest, "I_M.rds"))
-if(task_id == 17) I_T(model_data, method, family, k_state_year, file.path(dest, "I_D.rds"))
+if(task_id == 16) I_M(model_data, method, family, k_state_year, file.path(dest, "I_M.rds"))
+if(task_id == 17) I_D(model_data, method, family, k_state_year, file.path(dest, "I_D.rds"))
 
 
 # modGS1 <- gam(delta_density ~
