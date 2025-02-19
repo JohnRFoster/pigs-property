@@ -12,7 +12,7 @@ m0 <- function(d, m, f, dest){
   model_message(mod, dest)
 }
 
-m1 <- function(d, m, f){
+m1 <- function(d, m, f, dest){
   mod <- gam(delta_density ~ state_year, data = d, method = m, family = f)
   model_message(mod, dest)
 }
@@ -33,7 +33,7 @@ G_T <- function(d, m, f, k_sum_take, k_state_year, dest){
   model_message(mod, dest)
 }
 
-G_M <- function(d, m, f, k_sum_take, k_state_year){
+G_M <- function(d, m, f, k_sum_take, k_state_year, dest){
   mod <- gam(delta_density ~
         s(avg_take, k = k_sum_take, bs = "tp") +
         s(avg_events, bs = "tp") +
@@ -49,7 +49,7 @@ G_M <- function(d, m, f, k_sum_take, k_state_year){
   model_message(mod, dest)
 }
 
-G_D <- function(d, m, f, k_sum_take, k_state_year){
+G_D <- function(d, m, f, k_sum_take, k_state_year, dest){
   mod <- gam(delta_density ~
         s(delta_take, k = k_sum_take, bs = "tp") +
         s(delta_events, bs = "tp") +
@@ -65,7 +65,7 @@ G_D <- function(d, m, f, k_sum_take, k_state_year){
   model_message(mod, dest)
 }
 
-GS_T <- function(d, m, f){
+GS_T <- function(d, m, f, dest){
   mod <- gam(delta_density ~
         s(sum_take, bs = "tp", m = 2) +
         s(sum_events, bs = "tp", m = 2) +
@@ -82,7 +82,7 @@ GS_T <- function(d, m, f){
   model_message(mod, dest)
 }
 
-GS_M <- function(d, m, f){
+GS_M <- function(d, m, f, dest){
   mod <- gam(delta_density ~
         s(avg_take, bs = "tp", m = 2) +
         s(avg_events, bs = "tp", m = 2) +
@@ -99,7 +99,7 @@ GS_M <- function(d, m, f){
   model_message(mod, dest)
 }
 
-GS_D <- function(d, m, f){
+GS_D <- function(d, m, f, dest){
   mod <- gam(delta_density ~
         s(delta_take, bs = "tp", m = 2) +
         s(delta_events, bs = "tp", m = 2) +
@@ -116,7 +116,7 @@ GS_D <- function(d, m, f){
   model_message(mod, dest)
 }
 
-GI_T <- function(d, m, f, k_state_year){
+GI_T <- function(d, m, f, k_state_year, dest){
   mod <- gam(delta_density ~
         s(sum_take, bs = "tp", m = 2) +
         s(sum_events, bs = "tp", m = 2) +
@@ -134,7 +134,7 @@ GI_T <- function(d, m, f, k_state_year){
   model_message(mod, dest)
 }
 
-GI_M <- function(d, m, f, k_state_year){
+GI_M <- function(d, m, f, k_state_year, dest){
   mod <- gam(delta_density ~
         s(avg_take, bs = "tp", m = 2) +
         s(avg_events, bs = "tp", m = 2) +
@@ -153,7 +153,7 @@ GI_M <- function(d, m, f, k_state_year){
 }
 
 
-GI_D <- function(d, m, f, k_state_year){
+GI_D <- function(d, m, f, k_state_year, dest){
   mod <- gam(delta_density ~
         s(delta_take, bs = "tp", m = 2) +
         s(delta_events, bs = "tp", m = 2) +
@@ -171,7 +171,7 @@ GI_D <- function(d, m, f, k_state_year){
   model_message(mod, dest)
 }
 
-S_T <- function(d, m, f){
+S_T <- function(d, m, f, dest){
   mod <- gam(delta_density ~
         s(sum_take, state_year, bs = "fs", m = 2) +
         s(sum_events, state_year, bs = "fs", m = 2) +
@@ -186,7 +186,7 @@ S_T <- function(d, m, f){
   model_message(mod, dest)
 }
 
-S_M <- function(d, m, f){
+S_M <- function(d, m, f, dest){
   mod <- gam(delta_density ~
         s(avg_take, state_year, bs = "fs", m = 2) +
         s(avg_events, state_year, bs = "fs", m = 2) +
@@ -201,7 +201,7 @@ S_M <- function(d, m, f){
   model_message(mod, dest)
 }
 
-S_D <- function(d, m, f){
+S_D <- function(d, m, f, dest){
   mod <- gam(delta_density ~
         s(delta_take, state_year, bs = "fs", m = 2) +
         s(delta_events, state_year, bs = "fs", m = 2) +
@@ -216,7 +216,7 @@ S_D <- function(d, m, f){
   model_message(mod, dest)
 }
 
-I_T <- function(d, m, f, k_state_year){
+I_T <- function(d, m, f, k_state_year, dest){
   mod <- gam(delta_density ~
         s(property_area_km2, bs = "tp", m = 2) +
         s(c_road_den, bs = "tp", m = 2) +
@@ -232,7 +232,7 @@ I_T <- function(d, m, f, k_state_year){
   model_message(mod, dest)
 }
 
-I_M <- function(d, m, f, k_state_year){
+I_M <- function(d, m, f, k_state_year, dest){
   mod <- gam(delta_density ~
         s(property_area_km2, bs = "tp", m = 2) +
         s(c_road_den, bs = "tp", m = 2) +
@@ -249,7 +249,7 @@ I_M <- function(d, m, f, k_state_year){
 }
 
 
-I_D <- function(d, m, f, k_state_year){
+I_D <- function(d, m, f, k_state_year, dest){
   mod <- gam(delta_density ~
         s(property_area_km2, bs = "tp", m = 2) +
         s(c_road_den, bs = "tp", m = 2) +
