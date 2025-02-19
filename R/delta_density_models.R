@@ -4,9 +4,12 @@ library(readr)
 library(lubridate)
 library(mgcv)
 
+source("R/functions_delta_density_models.R")
+
+args <- commandArgs(trailingOnly = TRUE)
+task_id <- as.numeric(args[1])
 
 cutoff_date <- ymd("2023-12-31")
-
 
 config_name <- "hpc_dev"
 # config_name <- "default"
@@ -183,184 +186,35 @@ if(config_name == "default"){
 }
 
 
-
+k_sum_take <- 30
 k_state_year <- length(unique(model_data$state_year))
 k_county_year <- length(unique(model_data$county_year))
 
-m0 <- gam(delta_density ~ 1, data = model_data, method = method, family = family)
-write_rds(m0, file.path(config$out_delta, "m0.rds"))
+dest <- config$out_delta
 
-m1 <- gam(delta_density ~ state_year, data = model_data, method = method, family = family)
-write_rds(m0, file.path(config$out_delta, "m1.rds"))
+if(task_id == 1) m0(model_data, method, family, file.path(dest, "m0.rds"))
+if(task_id == 2) m1(model_data, method, family, file.path(dest, "m1.rds"))
 
-model_message <- function(m){
-  print(k.check(m))
-  print(summary(m))
-  message("\n\n")
-}
+if(task_id == 3) G_T(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_T.rds"))
+if(task_id == 4) G_M(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_M.rds"))
+if(task_id == 5) G_D(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_D.rds"))
 
-G_T <- gam(delta_density ~
-               s(sum_take, k = 30, bs = "tp") +
-               s(sum_events, bs = "tp") +
-               s(property_area_km2, bs = "tp") +
-               s(c_road_den, bs = "tp") +
-               s(c_rugged, bs = "tp") +
-               s(c_canopy, bs = "tp") +
-               s(c_prop.pub.land, bs = "tp") +
-               s(state_year, bs = "re", k = k_state_year),
-             method = method,
-             family = family,
-             data = model_data)
+if(task_id == 6) GS_T(model_data, method, family, file.path(dest, "GS_T.rds"))
+if(task_id == 7) GS_M(model_data, method, family, file.path(dest, "GS_M.rds"))
+if(task_id == 8) GS_D(model_data, method, family, file.path(dest, "GS_D.rds"))
 
-message("========== G_T ==========")
-write_rds(G_T, file.path(config$out_delta, "G_T.rds"))
-model_message(G_T)
+if(task_id == 9)  GI_T(model_data, method, family, k_state_year, file.path(dest, "GI_T.rds"))
+if(task_id == 10) GI_M(model_data, method, family, k_state_year, file.path(dest, "GI_M.rds"))
+if(task_id == 11) GI_D(model_data, method, family, k_state_year, file.path(dest, "GI_D.rds"))
 
-G_M <- gam(delta_density ~
-               s(avg_take, k = 30, bs = "tp") +
-               s(avg_events, bs = "tp") +
-               s(property_area_km2, bs = "tp") +
-               s(c_road_den, bs = "tp") +
-               s(c_rugged, bs = "tp") +
-               s(c_canopy, bs = "tp") +
-               s(c_prop.pub.land, bs = "tp") +
-               s(state_year, bs = "re", k = k_state_year),
-             method = method,
-             family = family,
-             data = model_data)
+if(task_id == 12) S_T(model_data, method, family, k_state_year, file.path(dest, "S_T.rds"))
+if(task_id == 13) S_M(model_data, method, family, k_state_year, file.path(dest, "S_M.rds"))
+if(task_id == 14) S_D(model_data, method, family, k_state_year, file.path(dest, "S_D.rds"))
 
-message("========== G_M ==========")
-write_rds(G_M, file.path(config$out_delta, "G_M.rds"))
-model_message(G_T)
+if(task_id == 15) I_T(model_data, method, family, k_state_year, file.path(dest, "I_T.rds"))
+if(task_id == 16) I_T(model_data, method, family, k_state_year, file.path(dest, "I_M.rds"))
+if(task_id == 17) I_T(model_data, method, family, k_state_year, file.path(dest, "I_D.rds"))
 
-G_D <- gam(delta_density ~
-               s(delta_take, k = 30, bs = "tp") +
-               s(delta_events, bs = "tp") +
-               s(property_area_km2, bs = "tp") +
-               s(c_road_den, bs = "tp") +
-               s(c_rugged, bs = "tp") +
-               s(c_canopy, bs = "tp") +
-               s(c_prop.pub.land, bs = "tp") +
-               s(state_year, bs = "re", k = k_state_year),
-             method = method,
-             family = family,
-             data = model_data)
-
-message("========== G_D ==========")
-write_rds(G_D, file.path(config$out_delta, "G_D.rds"))
-model_message(G_D)
-
-GS_T <- gam(delta_density ~
-             s(sum_take, m = 2) +
-             s(sum_events, m = 2) +
-             s(property_area_km2, m = 2) +
-             s(c_road_den, m = 2) +
-             s(c_rugged, m = 2) +
-             s(c_canopy, m = 2) +
-             s(c_prop.pub.land, m = 2) +
-             s(sum_take, state_year, bs = "fs", m = 2) +
-             s(sum_events, state_year, bs = "fs", m = 2),
-           method = method,
-           family = family,
-           data = model_data)
-
-message("========== GS_T ==========")
-write_rds(GS_T, file.path(config$out_delta, "GS_T.rds"))
-model_message(GS_T)
-
-GS_M <- gam(delta_density ~
-             s(avg_take, m = 2) +
-             s(avg_events, m = 2) +
-             s(property_area_km2, m = 2) +
-             s(c_road_den, m = 2) +
-             s(c_rugged, m = 2) +
-             s(c_canopy, m = 2) +
-             s(c_prop.pub.land, m = 2) +
-             s(avg_take, state_year, bs = "fs", m = 2) +
-             s(avg_events, state_year, bs = "fs", m = 2),
-           method = method,
-           family = family,
-           data = model_data)
-
-message("========== GS_M ==========")
-write_rds(GS_M, file.path(config$out_delta, "GS_M.rds"))
-model_message(GS_M)
-
-GS_D <- gam(delta_density ~
-             s(delta_take, m = 2) +
-             s(delta_events, m = 2) +
-             s(property_area_km2, m = 2) +
-             s(c_road_den, m = 2) +
-             s(c_rugged, m = 2) +
-             s(c_canopy, m = 2) +
-             s(c_prop.pub.land, m = 2) +
-             s(delta_take, state_year, bs = "fs", m = 2) +
-             s(delta_events, state_year, bs = "fs", m = 2),
-           method = method,
-           family = family,
-           data = model_data)
-
-message("========== GS_D ==========")
-write_rds(GS_D, file.path(config$out_delta, "GS_D.rds"))
-model_message(GS_D)
-
-
-GI_T <- gam(delta_density ~
-             s(sum_take, m = 2) +
-             s(sum_events, m = 2) +
-             s(property_area_km2, m = 2) +
-             s(c_road_den, m = 2) +
-             s(c_rugged, m = 2) +
-             s(c_canopy, m = 2) +
-             s(c_prop.pub.land, m = 2) +
-             s(sum_take, by = state_year, bs = "fs", m = 1) +
-             s(sum_events, by = state_year, bs = "fs", m = 1) +
-             s(state_year, bs = "re", k = k_state_year),
-           method = method,
-           family = family,
-           data = model_data)
-
-message("========== GI_T ==========")
-write_rds(GI_T, file.path(config$out_delta, "GI_T.rds"))
-model_message(GI_T)
-
-GI_M <- gam(delta_density ~
-             s(avg_take, m = 2) +
-             s(avg_events, m = 2) +
-             s(property_area_km2, m = 2) +
-             s(c_road_den, m = 2) +
-             s(c_rugged, m = 2) +
-             s(c_canopy, m = 2) +
-             s(c_prop.pub.land, m = 2) +
-             s(avg_take, by = state_year, bs = "fs", m = 1) +
-             s(avg_events, by = state_year, bs = "fs", m = 1) +
-             s(state_year, bs = "re", k = k_state_year),
-           method = method,
-           family = family,
-           data = model_data)
-
-message("========== GI_M ==========")
-write_rds(GI_M, file.path(config$out_delta, "GI_M.rds"))
-model_message(GI_M)
-
-GI_D <- gam(delta_density ~
-             s(delta_take, m = 2) +
-             s(delta_events, m = 2) +
-             s(property_area_km2, m = 2) +
-             s(c_road_den, m = 2) +
-             s(c_rugged, m = 2) +
-             s(c_canopy, m = 2) +
-             s(c_prop.pub.land, m = 2) +
-             s(delta_take, by = state_year, bs = "fs", m = 1) +
-             s(delta_events, by = state_year, bs = "fs", m = 1) +
-             s(state_year, bs = "re", k = k_state_year),
-           method = method,
-           family = family,
-           data = model_data)
-
-message("========== GI_D ==========")
-write_rds(GI_D, file.path(config$out_delta, "GI_D.rds"))
-model_message(GI_D)
 
 # modGS1 <- gam(delta_density ~
 #                te(avg_take, avg_events, bs = c("tp", "tp")) +  # thin plate regression spline
