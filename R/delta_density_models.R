@@ -128,7 +128,7 @@ data <- change_df |>
     st_name_fac = factor(st_name),
     year_fac = factor(year),
     county_code = factor(county_code),
-    state_year = as.numeric(factor(paste(st_name_fac, year_fac))))
+    state_year = factor(paste(st_name_fac, year_fac)))
 
 data_last_year <- data |>
   group_by(propertyID) |>
