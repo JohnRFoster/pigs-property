@@ -23,12 +23,14 @@ model_message <- function(m, dest){
 # D models - yearly change
 
 m0 <- function(d, m, f, dest){
-  mod <- gam(delta_density ~ 1, data = d, method = m, family = f)
+  mod <- gam(delta_density ~ 1, data = d, method = m, family = f,
+             drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
 m1 <- function(d, m, f, dest){
-  mod <- gam(delta_density ~ state_year, data = d, method = m, family = f)
+  mod <- gam(delta_density ~ state_year, data = d, method = m, family = f,
+             drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -46,7 +48,8 @@ G_T <- function(d, m, f, k_sum_take, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       data = d,
       method = m,
-      family = f)
+      family = f,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -62,7 +65,8 @@ G_M <- function(d, m, f, k_sum_take, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       data = d,
       method = m,
-      family = f)
+      family = f,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -78,7 +82,8 @@ G_D <- function(d, m, f, k_sum_take, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       data = d,
       method = m,
-      family = f)
+      family = f,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -98,7 +103,8 @@ GS_T <- function(d, m, f, dest){
         s(sum_events, state_year, bs = "fs", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -115,7 +121,8 @@ GS_M <- function(d, m, f, dest){
         s(avg_events, state_year, bs = "fs", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -132,7 +139,8 @@ GS_D <- function(d, m, f, dest){
         s(delta_events, state_year, bs = "fs", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -154,7 +162,8 @@ GI_T <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -172,7 +181,8 @@ GI_M <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -191,7 +201,8 @@ GI_D <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -209,7 +220,8 @@ S_T <- function(d, m, f, dest){
         s(c_prop.pub.land, bs = "tp", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -224,7 +236,8 @@ S_M <- function(d, m, f, dest){
         s(c_prop.pub.land, bs = "tp", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -239,7 +252,8 @@ S_D <- function(d, m, f, dest){
         s(c_prop.pub.land, bs = "tp", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -259,7 +273,8 @@ I_T <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -275,7 +290,8 @@ I_M <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
@@ -292,7 +308,8 @@ I_D <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d,
+      drop.unused.levels = FALSE)
   model_message(mod, dest)
 }
 
