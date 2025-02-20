@@ -170,7 +170,6 @@ if(config_name == "default"){
 
 k_sum_take <- 30
 k_state_year <- length(unique(model_data$state_year))
-k_county_year <- length(unique(model_data$county_year))
 
 dest <- config$out_delta
 
