@@ -23,9 +23,7 @@ source("R/functions_data.R")
 
 data_repo <- config$data_repo
 
-center_scale <- function(x) {
-  (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
-}
+
 
 ## observation covariates ----
 file <- file.path(data_repo, config$file_land)
@@ -113,18 +111,22 @@ assertthat::assert_that(all(change_df != first_flag))
 # re-coding state and county because, for example, 2020 in TX is not the same as 2020 in MO
 # same goes for counties
 
+center_scale <- function(x) {
+  (x - mean(x, na.rm = FALSE)) / sd(x, na.rm = FALSE)
+}
+
 data <- change_df |>
   left_join(data_obs) |>
   mutate(
-    # delta_density = center_scale(delta_density),
-    # sum_take = center_scale(sum_take),
-    # cum_take = center_scale(cum_take),
-    # avg_take = center_scale(avg_take),
-    # sum_events = center_scale(sum_events),
-    # avg_events = center_scale(avg_events),
-    # delta_take = center_scale(delta_take),
-    # delta_events = center_scale(delta_events),
-    # property_area_km2 = center_scale(property_area_km2),
+    delta_density = center_scale(delta_density),
+    sum_take = center_scale(sum_take),
+    cum_take = center_scale(cum_take),
+    avg_take = center_scale(avg_take),
+    sum_events = center_scale(sum_events),
+    avg_events = center_scale(avg_events),
+    delta_take = center_scale(delta_take),
+    delta_events = center_scale(delta_events),
+    property_area_km2 = center_scale(property_area_km2),
     st_name_fac = factor(st_name),
     year_fac = factor(year),
     county_code = factor(county_code),
