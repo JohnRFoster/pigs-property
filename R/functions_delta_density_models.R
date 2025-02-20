@@ -7,6 +7,21 @@ model_message <- function(m, dest){
   message("\n\n")
 }
 
+# Groups that could matter
+# state
+# county
+# year
+# state-year (see above)
+# county-year (see above)
+
+# create models by group/smoother and variable criteria
+
+# T models - yearly totals
+
+# M models - yearly means
+
+# D models - yearly change
+
 m0 <- function(d, m, f, dest){
   mod <- gam(delta_density ~ 1, data = d, method = m, family = f)
   model_message(mod, dest)
@@ -16,6 +31,8 @@ m1 <- function(d, m, f, dest){
   mod <- gam(delta_density ~ state_year, data = d, method = m, family = f)
   model_message(mod, dest)
 }
+
+# G model - A single common smoother for all observations; only has a Global smoother
 
 G_T <- function(d, m, f, k_sum_take, k_state_year, dest){
   mod <- gam(delta_density ~
@@ -64,6 +81,9 @@ G_D <- function(d, m, f, k_sum_take, k_state_year, dest){
       family = f)
   model_message(mod, dest)
 }
+
+# GS model - A global smoother plus group-level smoothers that have the *same* wiggliness
+#   - Global smoother with individual effects that have a *Shared* penalty
 
 GS_T <- function(d, m, f, dest){
   mod <- gam(delta_density ~
@@ -115,6 +135,10 @@ GS_D <- function(d, m, f, dest){
       data = d)
   model_message(mod, dest)
 }
+
+# GI model - A global smoother plus group-level smoothers with *differing* wiggliness
+#   - Global smoother with individual effects that have *Individual* penalties
+#   - This is useful if different groups differ substantially in how wiggly they are.
 
 GI_T <- function(d, m, f, k_state_year, dest){
   mod <- gam(delta_density ~
@@ -171,6 +195,9 @@ GI_D <- function(d, m, f, k_state_year, dest){
   model_message(mod, dest)
 }
 
+# S model - Group-specific smoothers without a global smoother
+#   - all smoothers having the *same* wiggliness
+
 S_T <- function(d, m, f, dest){
   mod <- gam(delta_density ~
         s(sum_take, state_year, bs = "fs", m = 2) +
@@ -215,6 +242,10 @@ S_D <- function(d, m, f, dest){
       data = d)
   model_message(mod, dest)
 }
+
+
+# I model - Group-specific smoothers with different wiggliness
+#   - all smoothers having the *different* wiggliness
 
 I_T <- function(d, m, f, k_state_year, dest){
   mod <- gam(delta_density ~

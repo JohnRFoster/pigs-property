@@ -110,6 +110,9 @@ change_df <- data_mis |>
 
 assertthat::assert_that(all(change_df != first_flag))
 
+# re-coding state and county because, for example, 2020 in TX is not the same as 2020 in MO
+# same goes for counties
+
 data <- change_df |>
   left_join(data_obs) |>
   mutate(
@@ -122,67 +125,46 @@ data <- change_df |>
     # delta_take = center_scale(delta_take),
     # delta_events = center_scale(delta_events),
     # property_area_km2 = center_scale(property_area_km2),
-    st_name = factor(st_name),
-    year = factor(year),
+    st_name_fac = factor(st_name),
+    year_fac = factor(year),
     county_code = factor(county_code),
-    state_year = factor(paste(st_name, year)),
-    county_year = factor(paste(county_code, year)))
+    state_year = as.numeric(factor(paste(st_name_fac, year_fac))))
 
-data |>
-  select(contains("take"), contains("events"), contains("c_"), contains("delta")) |>
-  select(-delta_density) |>
-  as.matrix() |>
-  cor()
+data_last_year <- data |>
+  group_by(propertyID) |>
+  mutate(last_year_flag = if_else(year == max(year), 1, 0))
 
-# re-coding state and county because, for example, 2020 in TX is not the same as 2020 in MO
-# same goes for counties
+data_train <- data_last_year |>
+  filter(last_year_flag == 0)
 
-glimpse(data)
+train_properties <- unique(data_train$propertyID)
+
+data_test <- data_last_year |>
+  filter(propertyID %in% train_properties,
+         last_year_flag == 1)
+
+length(train_properties)
+length(unique(data_test$propertyID))
+
+n_train <- nrow(data_train)
+n_test <- nrow(data_test)
+prop_train <- round(n_train / (n_train + n_test), 2)
+prop_test <- round(1 - prop_train, 2)
+
+message("Train/Test split: ", prop_train, "/", prop_test)
 
 method <- "REML"
 family <- "gaussian"
 
-# Groups that could matter
-# state
-# county
-# year
-# state-year (see above)
-# county-year (see above)
-
-# create models by group/smoother and variable criteria
-
-# G model - A single common smoother for all observations; only has a Global smoother
-
-# GS model - A global smoother plus group-level smoothers that have the *same* wiggliness
-#   - Global smoother with individual effects that have a *Shared* penalty
-
-# GI model - A global smoother plus group-level smoothers with *differing* wiggliness
-#   - Global smoother with individual effects that have *Individual* penalties
-#   - This is useful if different groups differ substantially in how wiggly they are.
-
-# S model - Group-specific smoothers without a global smoother
-#   - all smoothers having the *same* wiggliness
-
-# I model - Group-specific smoothers with different wiggliness
-#   - all smoothers having the *different* wiggliness
-
-# T models - yearly totals
-
-# M models - yearly means
-
-# D models - yearly change
-
-
-all_props <- unique(data$propertyID)
-
-draw <- sample.int(length(all_props), 50)
-test_props <- all_props[draw]
-
 if(config_name == "default"){
-  model_data <- data |>
+
+  draw <- sample.int(length(train_properties), 50)
+  test_props <- train_properties[draw]
+
+  model_data <- data_train |>
     filter(propertyID %in% test_props)
 } else {
-  model_data <- data
+  model_data <- data_train
 }
 
 
@@ -191,6 +173,13 @@ k_state_year <- length(unique(model_data$state_year))
 k_county_year <- length(unique(model_data$county_year))
 
 dest <- config$out_delta
+
+data_train2 <- data_train |> mutate(partition = "train")
+data_test2 <- data_test |> mutate(partition = "test")
+
+out_data <- bind_rows(data_train2, data_test2) |> select(-last_year_flag)
+
+write_rds(out_data, file.path(dest, "modelData.rds"))
 
 if(task_id == 1) m0(model_data, method, family, file.path(dest, "m0.rds"))
 if(task_id == 2) m1(model_data, method, family, file.path(dest, "m1.rds"))
