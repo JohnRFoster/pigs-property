@@ -288,8 +288,8 @@ out_list <- list(
 )
 
 dest <- config$out_delta
-file.path(dest, "ml_centerDeltaDensity.rds")
-write_rds(out_list, dest)
+filename <- file.path(dest, "ml_centerDeltaDensity.rds")
+write_rds(out_list, filename)
 
 
 
