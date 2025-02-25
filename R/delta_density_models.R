@@ -128,7 +128,7 @@ center_scale <- function(x) {
 data <- change_df |>
   left_join(data_obs) |>
   mutate(
-    y = center_Scale(delta_density),
+    y = center_scale(delta_density),
     propertyID = factor(propertyID),
     st_name = factor(st_name),
     year = factor(year),
