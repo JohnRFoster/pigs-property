@@ -170,6 +170,7 @@ if(config_name == "default"){
 }
 
 
+dul <- FALSE
 k_sum_take <- 30
 k_state_year <- length(unique(model_data$state_year))
 
@@ -182,28 +183,23 @@ out_data <- bind_rows(data_train2, data_test2) |> select(-last_year_flag)
 
 write_rds(out_data, file.path(dest, "modelData.rds"))
 
-if(task_id == 1) m0(model_data, method, family, file.path(dest, "m0.rds"))
-if(task_id == 2) m1(model_data, method, family, file.path(dest, "m1.rds"))
-
-if(task_id == 3) G_T(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_T.rds"))
-if(task_id == 4) G_M(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_M.rds"))
-if(task_id == 5) G_D(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_D.rds"))
-
-if(task_id == 6) GS_T(model_data, method, family, file.path(dest, "GS_T.rds"))
-if(task_id == 7) GS_M(model_data, method, family, file.path(dest, "GS_M.rds"))
-if(task_id == 8) GS_D(model_data, method, family, file.path(dest, "GS_D.rds"))
-
-if(task_id == 9)  GI_T(model_data, method, family, k_state_year, file.path(dest, "GI_T.rds"))
-if(task_id == 10) GI_M(model_data, method, family, k_state_year, file.path(dest, "GI_M.rds"))
-if(task_id == 11) GI_D(model_data, method, family, k_state_year, file.path(dest, "GI_D.rds"))
-
-if(task_id == 12) S_T(model_data, method, family, file.path(dest, "S_T.rds"))
-if(task_id == 13) S_M(model_data, method, family, file.path(dest, "S_M.rds"))
-if(task_id == 14) S_D(model_data, method, family, file.path(dest, "S_D.rds"))
-
-if(task_id == 15) I_T(model_data, method, family, k_state_year, file.path(dest, "I_T.rds"))
-if(task_id == 16) I_M(model_data, method, family, k_state_year, file.path(dest, "I_M.rds"))
-if(task_id == 17) I_D(model_data, method, family, k_state_year, file.path(dest, "I_D.rds"))
+if(task_id == 1) m0(model_data, method, family, file.path(dest, "m0.rds"), dul)
+if(task_id == 2) m1(model_data, method, family, file.path(dest, "m1.rds"), dul)
+if(task_id == 3) G_T(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_T.rds"), dul)
+if(task_id == 4) G_M(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_M.rds"), dul)
+if(task_id == 5) G_D(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_D.rds"), dul)
+if(task_id == 6) GS_T(model_data, method, family, file.path(dest, "GS_T.rds"), dul)
+if(task_id == 7) GS_M(model_data, method, family, file.path(dest, "GS_M.rds"), dul)
+if(task_id == 8) GS_D(model_data, method, family, file.path(dest, "GS_D.rds"), dul)
+if(task_id == 9)  GI_T(model_data, method, family, k_state_year, file.path(dest, "GI_T.rds"), dul)
+if(task_id == 10) GI_M(model_data, method, family, k_state_year, file.path(dest, "GI_M.rds"), dul)
+if(task_id == 11) GI_D(model_data, method, family, k_state_year, file.path(dest, "GI_D.rds"), dul)
+if(task_id == 12) S_T(model_data, method, family, file.path(dest, "S_T.rds"), dul)
+if(task_id == 13) S_M(model_data, method, family, file.path(dest, "S_M.rds"), dul)
+if(task_id == 14) S_D(model_data, method, family, file.path(dest, "S_D.rds"), dul)
+if(task_id == 15) I_T(model_data, method, family, k_state_year, file.path(dest, "I_T.rds"), dul)
+if(task_id == 16) I_M(model_data, method, family, k_state_year, file.path(dest, "I_M.rds"), dul)
+if(task_id == 17) I_D(model_data, method, family, k_state_year, file.path(dest, "I_D.rds"), dul)
 
 
 # modGS1 <- gam(delta_density ~

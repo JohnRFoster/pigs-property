@@ -22,19 +22,19 @@ model_message <- function(m, dest){
 
 # D models - yearly change
 
-m0 <- function(d, m, f, dest){
-  mod <- gam(delta_density ~ 1, data = d, method = m, family = f)
+m0 <- function(d, m, f, dest, dul){
+  mod <- gam(delta_density ~ 1, data = d, method = m, family = f, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
-m1 <- function(d, m, f, dest){
-  mod <- gam(delta_density ~ state_year, data = d, method = m, family = f)
+m1 <- function(d, m, f, dest, dul){
+  mod <- gam(delta_density ~ state_year, data = d, method = m, family = f, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
 # G model - A single common smoother for all observations; only has a Global smoother
 
-G_T <- function(d, m, f, k_sum_take, k_state_year, dest){
+G_T <- function(d, m, f, k_sum_take, k_state_year, dest, dul){
   mod <- gam(delta_density ~
         s(sum_take, k = k_sum_take, bs = "tp") +
         s(sum_events, bs = "tp") +
@@ -46,11 +46,11 @@ G_T <- function(d, m, f, k_sum_take, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       data = d,
       method = m,
-      family = f)
+      family = f, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
-G_M <- function(d, m, f, k_sum_take, k_state_year, dest){
+G_M <- function(d, m, f, k_sum_take, k_state_year, dest, dul){
   mod <- gam(delta_density ~
         s(avg_take, k = k_sum_take, bs = "tp") +
         s(avg_events, bs = "tp") +
@@ -62,11 +62,11 @@ G_M <- function(d, m, f, k_sum_take, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       data = d,
       method = m,
-      family = f)
+      family = f, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
-G_D <- function(d, m, f, k_sum_take, k_state_year, dest){
+G_D <- function(d, m, f, k_sum_take, k_state_year, dest, dul){
   mod <- gam(delta_density ~
         s(delta_take, k = k_sum_take, bs = "tp") +
         s(delta_events, bs = "tp") +
@@ -78,14 +78,14 @@ G_D <- function(d, m, f, k_sum_take, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       data = d,
       method = m,
-      family = f)
+      family = f, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
 # GS model - A global smoother plus group-level smoothers that have the *same* wiggliness
 #   - Global smoother with individual effects that have a *Shared* penalty
 
-GS_T <- function(d, m, f, dest){
+GS_T <- function(d, m, f, dest, dul){
   mod <- gam(delta_density ~
         s(sum_take, bs = "tp", m = 2) +
         s(sum_events, bs = "tp", m = 2) +
@@ -98,11 +98,11 @@ GS_T <- function(d, m, f, dest){
         s(sum_events, state_year, bs = "fs", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
-GS_M <- function(d, m, f, dest){
+GS_M <- function(d, m, f, dest, dul){
   mod <- gam(delta_density ~
         s(avg_take, bs = "tp", m = 2) +
         s(avg_events, bs = "tp", m = 2) +
@@ -115,11 +115,11 @@ GS_M <- function(d, m, f, dest){
         s(avg_events, state_year, bs = "fs", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
-GS_D <- function(d, m, f, dest){
+GS_D <- function(d, m, f, dest, dul){
   mod <- gam(delta_density ~
         s(delta_take, bs = "tp", m = 2) +
         s(delta_events, bs = "tp", m = 2) +
@@ -132,7 +132,7 @@ GS_D <- function(d, m, f, dest){
         s(delta_events, state_year, bs = "fs", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
@@ -140,7 +140,7 @@ GS_D <- function(d, m, f, dest){
 #   - Global smoother with individual effects that have *Individual* penalties
 #   - This is useful if different groups differ substantially in how wiggly they are.
 
-GI_T <- function(d, m, f, k_state_year, dest){
+GI_T <- function(d, m, f, k_state_year, dest, dul){
   mod <- gam(delta_density ~
         s(sum_take, bs = "tp", m = 2) +
         s(sum_events, bs = "tp", m = 2) +
@@ -154,11 +154,11 @@ GI_T <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
-GI_M <- function(d, m, f, k_state_year, dest){
+GI_M <- function(d, m, f, k_state_year, dest, dul){
   mod <- gam(delta_density ~
         s(avg_take, bs = "tp", m = 2) +
         s(avg_events, bs = "tp", m = 2) +
@@ -172,12 +172,12 @@ GI_M <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
 
-GI_D <- function(d, m, f, k_state_year, dest){
+GI_D <- function(d, m, f, k_state_year, dest, dul){
   mod <- gam(delta_density ~
         s(delta_take, bs = "tp", m = 2) +
         s(delta_events, bs = "tp", m = 2) +
@@ -191,14 +191,14 @@ GI_D <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
 # S model - Group-specific smoothers without a global smoother
 #   - all smoothers having the *same* wiggliness
 
-S_T <- function(d, m, f, dest){
+S_T <- function(d, m, f, dest, dul){
   mod <- gam(delta_density ~
         s(sum_take, state_year, bs = "fs", m = 2) +
         s(sum_events, state_year, bs = "fs", m = 2) +
@@ -209,11 +209,11 @@ S_T <- function(d, m, f, dest){
         s(c_prop.pub.land, bs = "tp", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
-S_M <- function(d, m, f, dest){
+S_M <- function(d, m, f, dest, dul){
   mod <- gam(delta_density ~
         s(avg_take, state_year, bs = "fs", m = 2) +
         s(avg_events, state_year, bs = "fs", m = 2) +
@@ -224,11 +224,11 @@ S_M <- function(d, m, f, dest){
         s(c_prop.pub.land, bs = "tp", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
-S_D <- function(d, m, f, dest){
+S_D <- function(d, m, f, dest, dul){
   mod <- gam(delta_density ~
         s(delta_take, state_year, bs = "fs", m = 2) +
         s(delta_events, state_year, bs = "fs", m = 2) +
@@ -239,7 +239,7 @@ S_D <- function(d, m, f, dest){
         s(c_prop.pub.land, bs = "tp", m = 2),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
@@ -247,7 +247,7 @@ S_D <- function(d, m, f, dest){
 # I model - Group-specific smoothers with different wiggliness
 #   - all smoothers having the *different* wiggliness
 
-I_T <- function(d, m, f, k_state_year, dest){
+I_T <- function(d, m, f, k_state_year, dest, dul){
   mod <- gam(delta_density ~
         s(property_area_km2, bs = "tp", m = 2) +
         s(c_road_den, bs = "tp", m = 2) +
@@ -259,11 +259,11 @@ I_T <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
-I_M <- function(d, m, f, k_state_year, dest){
+I_M <- function(d, m, f, k_state_year, dest, dul){
   mod <- gam(delta_density ~
         s(property_area_km2, bs = "tp", m = 2) +
         s(c_road_den, bs = "tp", m = 2) +
@@ -275,12 +275,12 @@ I_M <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
 
-I_D <- function(d, m, f, k_state_year, dest){
+I_D <- function(d, m, f, k_state_year, dest, dul){
   mod <- gam(delta_density ~
         s(property_area_km2, bs = "tp", m = 2) +
         s(c_road_den, bs = "tp", m = 2) +
@@ -292,7 +292,7 @@ I_D <- function(d, m, f, k_state_year, dest){
         s(state_year, bs = "re", k = k_state_year),
       method = m,
       family = f,
-      data = d)
+      data = d, drop.unused.levels = dul)
   model_message(mod, dest)
 }
 
