@@ -2,12 +2,11 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(lubridate)
-library(mgcv)
+library(rsample)
+library(recipes)
+library(xgboost)
 
-source("R/functions_delta_density_models.R")
-
-args <- commandArgs(trailingOnly = TRUE)
-task_id <- as.numeric(args[1])
+set.seed(123)
 
 cutoff_date <- ymd("2023-12-31")
 
@@ -88,10 +87,21 @@ data_mis <- data_grouped |>
          property_area_km2, total_take, take_density, density_estimate, abundance_estimate,
          n_events, methods_used)
 
+filename <- file.path(data_repo, 'ecoregions', 'Cnty.lower48.EcoRegions.Level2.shp')
+ecoregions <- terra::vect(filename) |>
+  as_tibble() |>
+  rename(st_name = STATE_NAME,
+         cnty_name = NAME,
+         county_code = FIPS,
+         ecoregion = NA_L2NAME) |>
+  select(st_name, county_code, ecoregion) |>
+  mutate(st_name = toupper(st_name))
+
 first_flag <- -1e4
 
 change_df <- data_mis |>
-  group_by(propertyID, year, st_name, county_code, property_area_km2) |>
+  left_join(ecoregions) |>
+  group_by(propertyID, year, st_name, county_code, property_area_km2, ecoregion) |>
   summarise(med_density = median(density_estimate),
             sum_take = sum(total_take),
             avg_take = mean(total_take),
@@ -106,7 +116,7 @@ change_df <- data_mis |>
   ungroup() |>
   filter(delta_density != first_flag)
 
-assertthat::assert_that(all(change_df != first_flag))
+assertthat::assert_that(all(change_df$delta_density != first_flag))
 
 # re-coding state and county because, for example, 2020 in TX is not the same as 2020 in MO
 # same goes for counties
@@ -118,125 +128,170 @@ center_scale <- function(x) {
 data <- change_df |>
   left_join(data_obs) |>
   mutate(
-    delta_density = center_scale(delta_density),
-    sum_take = center_scale(sum_take),
-    cum_take = center_scale(cum_take),
-    avg_take = center_scale(avg_take),
-    sum_events = center_scale(sum_events),
-    avg_events = center_scale(avg_events),
-    delta_take = center_scale(delta_take),
-    delta_events = center_scale(delta_events),
-    property_area_km2 = center_scale(property_area_km2),
-    st_name_fac = factor(st_name),
-    year_fac = factor(year),
+    y = center_Scale(delta_density),
+    propertyID = factor(propertyID),
+    st_name = factor(st_name),
+    year = factor(year),
     county_code = factor(county_code),
-    state_year = factor(paste(st_name_fac, year_fac)))
+    state_year = factor(paste(st_name, year)),
+    county_year = factor(paste(county_code, year)),
+    property_year = factor(paste(propertyID, year)),
+    ecoregion = factor(ecoregion),
+    eco_year = factor(paste(ecoregion, year))) |>
+  select(-delta_density, -med_density, -cum_take)
 
-data_last_year <- data |>
-  group_by(propertyID) |>
-  mutate(last_year_flag = if_else(year == max(year), 1, 0))
+# move to functions script
+my_recipe <- function(data){
+  require(rsample)
+  require(recipes)
 
-data_train <- data_last_year |>
-  filter(last_year_flag == 0)
+  blueprint <- recipe(y ~ ., data = data) |>
+    step_novel(eco_year, state_year, county_year, st_name,
+               county_code, ecoregion, propertyID, property_year) |>
+    step_dummy(all_nominal_predictors()) |>
+    step_nzv(all_predictors()) |>
+    step_center(all_numeric_predictors()) |>
+    step_scale(all_numeric_predictors())
 
-train_properties <- unique(data_train$propertyID)
+  return(blueprint)
 
-data_test <- data_last_year |>
-  filter(propertyID %in% train_properties,
-         last_year_flag == 1)
-
-length(train_properties)
-length(unique(data_test$propertyID))
-
-n_train <- nrow(data_train)
-n_test <- nrow(data_test)
-prop_train <- round(n_train / (n_train + n_test), 2)
-prop_test <- round(1 - prop_train, 2)
-
-message("Train/Test split: ", prop_train, "/", prop_test)
-
-method <- "REML"
-family <- "gaussian"
-
-if(config_name == "default"){
-
-  draw <- sample.int(length(train_properties), 50)
-  test_props <- train_properties[draw]
-
-  model_data <- data_train |>
-    filter(propertyID %in% test_props)
-} else {
-  model_data <- data_train
 }
 
+split <- initial_split(data, prop = 0.7)
+df_train <- training(split)
+df_test <- testing(split)
 
-dul <- FALSE
-k_sum_take <- 30
-k_state_year <- length(unique(model_data$state_year))
+blueprint <- my_recipe(df_train)
+prepare <- prep(blueprint, training = df_train)
+baked_train <- bake(prepare, new_data = df_train)
+baked_test <- bake(prepare, new_data = df_test)
+
+
+X <- baked_train |>
+  select(-y) |>
+  as.matrix()
+Y <- baked_train |> pull(y)
+hist(Y)
+
+hyp_vec <- c(0, 0.01, 0.1, 1, 10, 100)
+
+# hyperparameter grid
+hyper_grid <- expand_grid(
+  eta = 0.1,
+  max_depth = 3,
+  min_child_weight = 0.5,
+  subsample = 0.5,
+  colsample_bytree = 0.5,
+  gamma = hyp_vec,
+  lambda = hyp_vec,
+  alpha = hyp_vec,
+  rmse = 0,
+  trees = 0
+)
+
+# hyper_grid <- hyper_grid[1:10, ]
+objective <- "reg:squarederror"
+
+pb <- txtProgressBar(min = 1, max = nrow(hyper_grid), style = 1)
+for(i in 1:nrow(hyper_grid)){
+
+  m <- xgb.cv(
+    data = X,
+    label = Y,
+    nrounds = 5000,
+    objective = objective,
+    metrics = "rmse",
+    early_stopping_rounds = 50,
+    nfold = 10,
+    verbose = 0,
+    params = list(
+      eta = hyper_grid$eta[i],
+      max_depth = hyper_grid$max_depth[i],
+      min_child_weight = hyper_grid$min_child_weight[i],
+      subsample = hyper_grid$subsample[i],
+      colsample_bytree = hyper_grid$colsample_bytree[i],
+      gamma = hyper_grid$gamma[i],
+      lambda = hyper_grid$lambda[i],
+      alpha = hyper_grid$alpha[i]
+    )
+  )
+
+  hyper_grid$rmse[i] <- min(m$evaluation_log$test_rmse_mean)
+  hyper_grid$trees[i] <- m$best_iteration
+
+  setTxtProgressBar(pb, i)
+
+}
+close(pb)
+
+tune_grid <- hyper_grid |>
+  filter(rmse == min(rmse))
+
+params <- list(
+  eta = pull(tune_grid, eta),
+  max_depth = pull(tune_grid, max_depth),
+  min_child_weight = pull(tune_grid, min_child_weight),
+  subsample = pull(tune_grid, subsample),
+  colsample_bytree = pull(tune_grid, colsample_bytree),
+  gamma = pull(tune_grid, gamma),
+  lambda = pull(tune_grid, lambda),
+  alpha = pull(tune_grid, alpha)
+)
+
+# train final model
+fit <- xgboost(
+  params = params,
+  data = X,
+  label = Y,
+  nrounds = pull(tune_grid, trees),
+  objective = objective,
+  verbose = 0
+)
+
+make_prediction <- function(model, new_data){
+
+  if("y" %in% colnames(new_data)){
+    new_data <- new_data |> select(-y)
+  }
+
+  pred <- predict(fit, as.matrix(new_data), interval="confidence")
+
+  new_data |> mutate(pred = pred)
+}
+
+df_pred <- make_prediction(fit, baked_test)
+df_pred$y <- baked_test$y
+
+rmse <- sqrt(mean((baked_test$y - df_pred$pred)^2))
+cc <- cor(baked_test$y, df_pred$pred)
+r2 <- cc^2
+vi <- xgb.importance(model = fit)
+vi$gainRelative <- vi$Gain / max(vi$Gain)
+
+
+message("===============================")
+message("RMSE: ", round(rmse, 2))
+message("COR: ", round(cc, 2))
+message("R2: ", round(r2, 2))
+message("===============================")
+
+plot(df_pred$y, df_pred$pred)
+abline(0, 1)
+
+out_list <- list(
+  baked_train = baked_train,
+  baked_test = df_pred,
+  train_test_rmse = rmse,
+  train_test_r2 = r2,
+  vi = vi,
+  hyper_grid = hyper_grid
+)
 
 dest <- config$out_delta
-
-data_train2 <- data_train |> mutate(partition = "train")
-data_test2 <- data_test |> mutate(partition = "test")
-
-out_data <- bind_rows(data_train2, data_test2) |> select(-last_year_flag)
-
-write_rds(out_data, file.path(dest, "modelData.rds"))
-
-if(task_id == 1) m0(model_data, method, family, file.path(dest, "m0.rds"), dul)
-if(task_id == 2) m1(model_data, method, family, file.path(dest, "m1.rds"), dul)
-if(task_id == 3) G_T(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_T.rds"), dul)
-if(task_id == 4) G_M(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_M.rds"), dul)
-if(task_id == 5) G_D(model_data, method, family, k_sum_take, k_state_year, file.path(dest, "G_D.rds"), dul)
-if(task_id == 6) GS_T(model_data, method, family, file.path(dest, "GS_T.rds"), dul)
-if(task_id == 7) GS_M(model_data, method, family, file.path(dest, "GS_M.rds"), dul)
-if(task_id == 8) GS_D(model_data, method, family, file.path(dest, "GS_D.rds"), dul)
-if(task_id == 9)  GI_T(model_data, method, family, k_state_year, file.path(dest, "GI_T.rds"), dul)
-if(task_id == 10) GI_M(model_data, method, family, k_state_year, file.path(dest, "GI_M.rds"), dul)
-if(task_id == 11) GI_D(model_data, method, family, k_state_year, file.path(dest, "GI_D.rds"), dul)
-if(task_id == 12) S_T(model_data, method, family, file.path(dest, "S_T.rds"), dul)
-if(task_id == 13) S_M(model_data, method, family, file.path(dest, "S_M.rds"), dul)
-if(task_id == 14) S_D(model_data, method, family, file.path(dest, "S_D.rds"), dul)
-if(task_id == 15) I_T(model_data, method, family, k_state_year, file.path(dest, "I_T.rds"), dul)
-if(task_id == 16) I_M(model_data, method, family, k_state_year, file.path(dest, "I_M.rds"), dul)
-if(task_id == 17) I_D(model_data, method, family, k_state_year, file.path(dest, "I_D.rds"), dul)
+file.path(dest, "ml_centerDeltaDensity.rds")
+write_rds(out_list, dest)
 
 
-# modGS1 <- gam(delta_density ~
-#                te(avg_take, avg_events, bs = c("tp", "tp")) +  # thin plate regression spline
-#                t2(avg_take, avg_events, st_name, bs = c("tp", "tp", "re")) +
-#                s(state_year, bs = "re", k = k_state_year), # random effect
-#              method = method,
-#              family = family,
-#              data = data)
-#
-# summary(modGS1)
-
-# m2 <- gam(delta_density ~
-#             s(sum_take) +                                    #S1
-#             s(sum_take, year, bs = "sz") +                   #S2
-#             s(sum_take, st_name, bs = "fs", by = year),      #S3
-#           data = data,
-#           method = method)
-
-# summary(m2)
-# plot(m2, pages = 1)
-# gam.check(m2)
-
-# S1 is the average smooth effect of total yearly take, over the entire data set.
-# This would capture, for example, the general tendency for the change in yearly density
-# to increase, reach a peak, and then decline again as take increases.
-
-# S2 is a difference smooth, parametrised in such a way as to be orthogonal to the average
-# smooth of total yearly take. This would describe the smooth differences between the "average"
-# total take effect and the smooth effects for each year.
-
-# S3 is a random factor smooth term, with a smooth of total yearly take for each state,
-# which are allowed to differ by year. Modelling this more like a random effect because
-# one could think of many states from which the change in density is drawn, and there are
-# likely quite a few states, but they all have roughly the same wiggliness, but different
-# shapes — I wouldn't expect the smooth effect of total take to be really wiggly for TX
-# and really smooth OK for example.
 
 
 
