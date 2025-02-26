@@ -99,7 +99,32 @@ ecoregions <- terra::vect(filename) |>
 
 first_flag <- -1e4
 
+# data_mis_year <- data_mis |>
+#   select(propertyID, year) |>
+#   distinct()
+#
+# props <- unique(data_mis_year$propertyID)
+#
+# all_props_year <- tibble()
+# for(i in seq_along(props)){
+#   tmp <- data_mis_year |> filter(propertyID == props[i])
+#
+#   tmp2 <- tibble(
+#     propertyID = props[i],
+#     year = min(tmp$year):max(tmp$year)
+#   )
+#
+#   all_props_year <- bind_rows(all_props_year, tmp2)
+#
+# }
+#
+# property_info <- data_mis |>
+#   select(propertyID, st_name, county_code, property_area_km2) |>
+#   unique()
+
 change_df <- data_mis |>
+  mutate(total_take = if_else(is.na(total_take), 0, total_take),
+         n_events = if_else(is.na(n_events), 0, n_events)) |>
   left_join(ecoregions) |>
   group_by(propertyID, year, st_name, county_code, property_area_km2, ecoregion) |>
   summarise(med_density = median(density_estimate),
@@ -112,7 +137,8 @@ change_df <- data_mis |>
   mutate(delta_density = c(first_flag, diff(med_density)),
          delta_take = c(first_flag, diff(sum_take)),
          delta_events = c(first_flag, diff(sum_events)),
-         cum_take = cumsum(sum_take)) |>
+         cum_take = cumsum(sum_take),
+         delta_year = c(first_flag, diff(year))) |>
   ungroup() |>
   filter(delta_density != first_flag)
 
@@ -121,15 +147,14 @@ assertthat::assert_that(all(change_df$delta_density != first_flag))
 # re-coding state and county because, for example, 2020 in TX is not the same as 2020 in MO
 # same goes for counties
 
-center_scale <- function(x) {
-  (x - mean(x, na.rm = FALSE)) / sd(x, na.rm = FALSE)
+center_scale <- function(x, nrm = FALSE) {
+  (x - mean(x, na.rm = nrm)) / sd(x, na.rm = nrm)
 }
 
 data <- change_df |>
   left_join(data_obs) |>
   mutate(
-    y = delta_density,
-    # y = center_scale(delta_density),
+    y = center_scale(delta_density, TRUE),
     propertyID = factor(propertyID),
     st_name = factor(st_name),
     year = factor(year),
@@ -151,8 +176,8 @@ my_recipe <- function(data){
                county_code, ecoregion, propertyID, property_year) |>
     step_dummy(all_nominal_predictors()) |>
     step_nzv(all_predictors()) |>
-    step_center(y, all_numeric_predictors()) |>
-    step_scale(y, all_numeric_predictors())
+    step_center(all_numeric_predictors()) |>
+    step_scale(all_numeric_predictors())
 
   return(blueprint)
 
@@ -289,7 +314,7 @@ out_list <- list(
 )
 
 dest <- config$out_delta
-filename <- file.path(dest, "ml_centerRecipeDeltaDensity.rds")
+filename <- file.path(dest, "ml_RecipeDeltaDensity2.rds")
 write_rds(out_list, filename)
 
 
