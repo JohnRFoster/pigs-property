@@ -128,7 +128,8 @@ center_scale <- function(x) {
 data <- change_df |>
   left_join(data_obs) |>
   mutate(
-    y = center_scale(delta_density),
+    y = delta_density,
+    # y = center_scale(delta_density),
     propertyID = factor(propertyID),
     st_name = factor(st_name),
     year = factor(year),
@@ -150,8 +151,8 @@ my_recipe <- function(data){
                county_code, ecoregion, propertyID, property_year) |>
     step_dummy(all_nominal_predictors()) |>
     step_nzv(all_predictors()) |>
-    step_center(all_numeric_predictors()) |>
-    step_scale(all_numeric_predictors())
+    step_center(y, all_numeric_predictors()) |>
+    step_scale(y, all_numeric_predictors())
 
   return(blueprint)
 
@@ -288,7 +289,7 @@ out_list <- list(
 )
 
 dest <- config$out_delta
-filename <- file.path(dest, "ml_centerDeltaDensity.rds")
+filename <- file.path(dest, "ml_centerRecipeDeltaDensity.rds")
 write_rds(out_list, filename)
 
 
