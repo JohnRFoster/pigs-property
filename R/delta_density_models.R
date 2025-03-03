@@ -294,7 +294,7 @@ out_list <- list(
 )
 
 dest <- config$out_delta
-filename <- file.path(dest, "ml_sqrtDensity.rds")
+filename <- file.path(dest, "ml_cbrtDensity.rds")
 write_rds(out_list, filename)
 
 
