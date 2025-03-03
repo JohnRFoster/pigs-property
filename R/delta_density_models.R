@@ -97,30 +97,7 @@ ecoregions <- terra::vect(filename) |>
   select(st_name, county_code, ecoregion) |>
   mutate(st_name = toupper(st_name))
 
-first_flag <- -1e4
-
-# data_mis_year <- data_mis |>
-#   select(propertyID, year) |>
-#   distinct()
-#
-# props <- unique(data_mis_year$propertyID)
-#
-# all_props_year <- tibble()
-# for(i in seq_along(props)){
-#   tmp <- data_mis_year |> filter(propertyID == props[i])
-#
-#   tmp2 <- tibble(
-#     propertyID = props[i],
-#     year = min(tmp$year):max(tmp$year)
-#   )
-#
-#   all_props_year <- bind_rows(all_props_year, tmp2)
-#
-# }
-#
-# property_info <- data_mis |>
-#   select(propertyID, st_name, county_code, property_area_km2) |>
-#   unique()
+first_flag <- 0
 
 change_df <- data_mis |>
   mutate(total_take = if_else(is.na(total_take), 0, total_take),
@@ -134,15 +111,16 @@ change_df <- data_mis |>
             avg_events = mean(n_events)) |>
   arrange(propertyID, year) |>
   group_by(propertyID) |>
-  mutate(delta_density = c(first_flag, diff(med_density)),
+  mutate(#delta_density = c(first_flag, diff(med_density)),
          delta_take = c(first_flag, diff(sum_take)),
          delta_events = c(first_flag, diff(sum_events)),
          cum_take = cumsum(sum_take),
+         cum_events = cumsum(sum_events),
          delta_year = c(first_flag, diff(year))) |>
-  ungroup() |>
-  filter(delta_density != first_flag)
+  ungroup()
+  # filter(delta_density != first_flag)
 
-assertthat::assert_that(all(change_df$delta_density != first_flag))
+# assertthat::assert_that(all(change_df$delta_density != first_flag))
 
 # re-coding state and county because, for example, 2020 in TX is not the same as 2020 in MO
 # same goes for counties
@@ -154,7 +132,10 @@ center_scale <- function(x, nrm = FALSE) {
 data <- change_df |>
   left_join(data_obs) |>
   mutate(
-    y = center_scale(delta_density, TRUE),
+    # y = med_density,
+    y = sqrt(med_density),
+    # y3 = med_density^(1/3),
+    # y = center_scale(delta_density, TRUE),
     propertyID = factor(propertyID),
     st_name = factor(st_name),
     year = factor(year),
@@ -164,7 +145,7 @@ data <- change_df |>
     property_year = factor(paste(propertyID, year)),
     ecoregion = factor(ecoregion),
     eco_year = factor(paste(ecoregion, year))) |>
-  select(-delta_density, -med_density, -cum_take)
+  select(-med_density)
 
 # move to functions script
 my_recipe <- function(data){
@@ -191,7 +172,6 @@ blueprint <- my_recipe(df_train)
 prepare <- prep(blueprint, training = df_train)
 baked_train <- bake(prepare, new_data = df_train)
 baked_test <- bake(prepare, new_data = df_test)
-
 
 X <- baked_train |>
   select(-y) |>
@@ -314,7 +294,7 @@ out_list <- list(
 )
 
 dest <- config$out_delta
-filename <- file.path(dest, "ml_RecipeDeltaDensity2.rds")
+filename <- file.path(dest, "ml_sqrtDensity.rds")
 write_rds(out_list, filename)
 
 
