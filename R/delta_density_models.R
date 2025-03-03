@@ -133,8 +133,8 @@ data <- change_df |>
   left_join(data_obs) |>
   mutate(
     # y = med_density,
-    y = sqrt(med_density),
-    # y3 = med_density^(1/3),
+    # y = sqrt(med_density),
+    y = med_density^(1/3),
     # y = center_scale(delta_density, TRUE),
     propertyID = factor(propertyID),
     st_name = factor(st_name),
