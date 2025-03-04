@@ -108,7 +108,8 @@ change_df <- data_mis |>
             sum_take = sum(total_take),
             avg_take = mean(total_take),
             sum_events = sum(n_events),
-            avg_events = mean(n_events)) |>
+            avg_events = mean(n_events)
+            ) |>
   arrange(propertyID, year) |>
   group_by(propertyID) |>
   mutate(#delta_density = c(first_flag, diff(med_density)),
@@ -116,7 +117,13 @@ change_df <- data_mis |>
          delta_events = c(first_flag, diff(sum_events)),
          cum_take = cumsum(sum_take),
          cum_events = cumsum(sum_events),
-         delta_year = c(first_flag, diff(year))) |>
+         delta_year = c(first_flag, diff(year)),
+         sum_take_density = sum_take / property_area_km2,
+         avg_take_density = avg_take / property_area_km2,
+         sum_events_density = sum_events / property_area_km2,
+         avg_events_density = avg_events / property_area_km2,
+         cum_take_density = cum_take / property_area_km2,
+         cum_events_density = cum_events / property_area_km2) |>
   ungroup()
   # filter(delta_density != first_flag)
 
