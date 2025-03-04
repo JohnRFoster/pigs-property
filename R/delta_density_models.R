@@ -139,9 +139,9 @@ center_scale <- function(x, nrm = FALSE) {
 data <- change_df |>
   left_join(data_obs) |>
   mutate(
-    # y = med_density,
+    y = med_density,
     # y = sqrt(med_density),
-    y = med_density^(1/3),
+    # y = med_density^(1/3),
     # y = center_scale(delta_density, TRUE),
     propertyID = factor(propertyID),
     st_name = factor(st_name),
@@ -162,10 +162,12 @@ my_recipe <- function(data){
   blueprint <- recipe(y ~ ., data = data) |>
     step_novel(eco_year, state_year, county_year, st_name,
                county_code, ecoregion, propertyID, property_year) |>
+    step_YeoJohnson(all_outcomes()) |>
     step_dummy(all_nominal_predictors()) |>
     step_nzv(all_predictors()) |>
-    step_center(all_numeric_predictors()) |>
-    step_scale(all_numeric_predictors())
+    # step_center(all_numeric_predictors()) |>
+    # step_scale(all_numeric_predictors())
+    step_YeoJohnson(all_numeric_predictors())
 
   return(blueprint)
 
@@ -301,7 +303,7 @@ out_list <- list(
 )
 
 dest <- config$out_delta
-filename <- file.path(dest, "ml_cbrtDensity.rds")
+filename <- file.path(dest, "ml_YeoJohnsonALL.rds")
 write_rds(out_list, filename)
 
 
