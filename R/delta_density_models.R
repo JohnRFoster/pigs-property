@@ -140,9 +140,6 @@ data <- change_df |>
   left_join(data_obs) |>
   mutate(
     y = med_density,
-    # y = sqrt(med_density),
-    # y = med_density^(1/3),
-    # y = center_scale(delta_density, TRUE),
     propertyID = factor(propertyID),
     st_name = factor(st_name),
     year = factor(year),
@@ -299,21 +296,14 @@ out_list <- list(
   train_test_rmse = rmse,
   train_test_r2 = r2,
   vi = vi,
-  hyper_grid = hyper_grid
+  hyper_grid = hyper_grid,
+  tidy_y = tidy(prepare, number = 2),
+  tidy_x = tidy(prepare, number = 5)
+
 )
 
 dest <- config$out_delta
 filename <- file.path(dest, "ml_YeoJohnsonALL.rds")
 write_rds(out_list, filename)
-
-
-
-
-
-
-
-
-
-
 
 
