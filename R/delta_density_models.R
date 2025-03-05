@@ -97,7 +97,7 @@ ecoregions <- terra::vect(filename) |>
   select(st_name, county_code, ecoregion) |>
   mutate(st_name = toupper(st_name))
 
-first_flag <- 0
+first_flag <- NA
 
 change_df <- data_mis |>
   mutate(total_take = if_else(is.na(total_take), 0, total_take),
@@ -157,14 +157,14 @@ my_recipe <- function(data){
   require(recipes)
 
   blueprint <- recipe(y ~ ., data = data) |>
+    step_nzv(all_predictors()) |>
+    step_YeoJohnson(all_outcomes()) |>
+    step_YeoJohnson(all_numeric_predictors()) |>
     step_novel(eco_year, state_year, county_year, st_name,
                county_code, ecoregion, propertyID, property_year) |>
-    step_YeoJohnson(all_outcomes()) |>
-    step_dummy(all_nominal_predictors()) |>
-    step_nzv(all_predictors()) |>
+    step_dummy(all_nominal_predictors())
     # step_center(all_numeric_predictors()) |>
     # step_scale(all_numeric_predictors())
-    step_YeoJohnson(all_numeric_predictors())
 
   return(blueprint)
 
