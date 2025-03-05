@@ -27,8 +27,7 @@ data_repo <- config$data_repo
 ## observation covariates ----
 file <- file.path(data_repo, config$file_land)
 data_obs <- get_obs_covars(file) |>
-  mutate(c_prop.pub.land = center_scale(prop.pub.land)) |>
-  select(county_code, contains("c_"))
+  select(rural.road.density, prop.pub.land, mean.ruggedness, mean.canopy.density, county_code)
 
 
 ## join with farm bill properties ----
@@ -298,7 +297,7 @@ out_list <- list(
   vi = vi,
   hyper_grid = hyper_grid,
   tidy_y = tidy(prepare, number = 2),
-  tidy_x = tidy(prepare, number = 5)
+  tidy_x = tidy(prepare, number = 3)
 
 )
 
