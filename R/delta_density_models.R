@@ -10,8 +10,8 @@ set.seed(123)
 
 cutoff_date <- ymd("2023-12-31")
 
-config_name <- "hpc_dev"
-# config_name <- "default"
+# config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -82,7 +82,7 @@ data_mis <- data_grouped |>
   filter(end_dates <= cutoff_date) |>
   mutate(abundance_estimate = round(`0.5` * property_area_km2)) |>
   rename(density_estimate = `0.5`) |>
-  select(propertyID, end_dates, year, st_name, cnty_name, county_code,
+  select(propertyID, end_dates, year, st_name, cnty_name, county_code, farm_bill,
          property_area_km2, total_take, take_density, density_estimate, abundance_estimate,
          n_events, methods_used)
 
@@ -98,11 +98,11 @@ ecoregions <- terra::vect(filename) |>
 
 first_flag <- NA
 
-change_df <- data_mis |>
+yearly_summaries <- data_mis |>
   mutate(total_take = if_else(is.na(total_take), 0, total_take),
          n_events = if_else(is.na(n_events), 0, n_events)) |>
   left_join(ecoregions) |>
-  group_by(propertyID, year, st_name, county_code, property_area_km2, ecoregion) |>
+  group_by(propertyID, year, st_name, county_code, property_area_km2, ecoregion, farm_bill) |>
   summarise(med_density = median(density_estimate),
             sum_take = sum(total_take),
             avg_take = mean(total_take),
@@ -116,7 +116,6 @@ change_df <- data_mis |>
          delta_events = c(first_flag, diff(sum_events)),
          cum_take = cumsum(sum_take),
          cum_events = cumsum(sum_events),
-         delta_year = c(first_flag, diff(year)),
          sum_take_density = sum_take / property_area_km2,
          avg_take_density = avg_take / property_area_km2,
          sum_events_density = sum_events / property_area_km2,
@@ -124,24 +123,42 @@ change_df <- data_mis |>
          cum_take_density = cum_take / property_area_km2,
          cum_events_density = cum_events / property_area_km2) |>
   ungroup()
-  # filter(delta_density != first_flag)
 
-# assertthat::assert_that(all(change_df$delta_density != first_flag))
+events_by_method_per_year <- method_per_year |>
+  select(propertyID, year, events, method) |>
+  mutate(n_method_events_year = paste0("n_", method, "_events")) |>
+  select(-method) |>
+  pivot_wider(names_from = n_method_events_year,
+              values_from = events,
+              values_fill = 0)
 
-# re-coding state and county because, for example, 2020 in TX is not the same as 2020 in MO
-# same goes for counties
+units_by_method_per_year <- method_per_year |>
+  select(propertyID, year, units, method) |>
+  mutate(n_method_units_year = paste0("n_", method, "_units")) |>
+  select(-method) |>
+  pivot_wider(names_from = n_method_units_year,
+              values_from = units,
+              values_fill = 0)
 
-center_scale <- function(x, nrm = FALSE) {
-  (x - mean(x, na.rm = nrm)) / sd(x, na.rm = nrm)
-}
+units_per_event_year_by_method_per_year <- method_per_year |>
+  select(propertyID, year, units_per_event, method) |>
+  mutate(n_method_units_per_event_year = paste0("n_", method, "_units_per_event")) |>
+  select(-method) |>
+  pivot_wider(names_from = n_method_units_per_event_year,
+              values_from = units_per_event,
+              values_fill = 0)
 
-data <- change_df |>
+data_ml <- yearly_summaries |>
   left_join(data_obs) |>
+  left_join(events_by_method_per_year) |>
+  left_join(units_by_method_per_year) |>
+  left_join(units_per_event_year_by_method_per_year) |>
   mutate(
     y = med_density,
+    year = ymd(paste0(year, "-01-01")),
+    farm_bill = as.factor(farm_bill),
     propertyID = factor(propertyID),
     st_name = factor(st_name),
-    year = factor(year),
     county_code = factor(county_code),
     state_year = factor(paste(st_name, year)),
     county_year = factor(paste(county_code, year)),
@@ -150,28 +167,71 @@ data <- change_df |>
     eco_year = factor(paste(ecoregion, year))) |>
   select(-med_density)
 
+properties <- unique(data_ml$propertyID)
+n_props <- length(properties)
+n_test_props <- 100
+test_draws <- sample.int(n_props, n_test_props)
+
+train_properties <- properties[-test_draws]
+test_properties <- properties[test_draws]
+
+df_train <- data_ml |>
+  filter(propertyID %in% train_properties) |>
+  group_by(propertyID) |>
+  filter(year < max(year)) |>
+  ungroup()
+
+test1 <- data_ml |>
+  filter(propertyID %in% train_properties) |>
+  group_by(propertyID) |>
+  filter(year == max(year)) |>
+  ungroup()
+
+df_test <- data_ml |>
+  filter(propertyID %in% test_properties) |>
+  bind_rows(test1)
+
+p_train <- round(nrow(df_train) / nrow(data_ml), 2) * 100
+p_test <- round(nrow(df_test) / nrow(data_ml), 2) * 100
+
+message("Train test split across data: ", p_train, ":", p_test)
+
 # move to functions script
 my_recipe <- function(data){
   require(rsample)
   require(recipes)
 
   blueprint <- recipe(y ~ ., data = data) |>
-    step_nzv(all_predictors()) |>
-    step_YeoJohnson(all_outcomes()) |>
-    step_YeoJohnson(all_numeric_predictors()) |>
+
+    # recommended order from recipes package
+
+  # Impute (does not apply)
+  # Handle factor levels
     step_novel(eco_year, state_year, county_year, st_name,
                county_code, ecoregion, propertyID, property_year) |>
-    step_dummy(all_nominal_predictors())
-    # step_center(all_numeric_predictors()) |>
-    # step_scale(all_numeric_predictors())
+    step_date(year, features = "year", keep_original_cols = FALSE) |>
+
+  # Individual transformations for skewness and other issues
+    step_YeoJohnson(all_outcomes()) |>
+    step_YeoJohnson(all_numeric_predictors()) |>
+
+  # Discretize (if needed and if you have no other choice; does not apply)
+  # Create dummy variables
+    step_dummy(all_nominal_predictors()) |>
+
+  # Create interactions
+    step_interact(terms = ~sum_take:sum_events) |>
+    step_interact(terms = ~avg_take:avg_events) |>
+    step_interact(terms = ~cum_take:cum_events) |>
+  # Normalization steps (center, scale, range, etc; does not apply)
+  # Multivariate transformation (e.g. PCA, spatial sign, etc; does not apply)
+
+  # filter
+    step_nzv(all_predictors())
 
   return(blueprint)
 
 }
-
-split <- initial_split(data, prop = 0.7)
-df_train <- training(split)
-df_test <- testing(split)
 
 blueprint <- my_recipe(df_train)
 prepare <- prep(blueprint, training = df_train)
@@ -184,18 +244,16 @@ X <- baked_train |>
 Y <- baked_train |> pull(y)
 hist(Y)
 
-hyp_vec <- c(0, 0.01, 0.1, 1, 10, 100)
-
 # hyperparameter grid
 hyper_grid <- expand_grid(
-  eta = 0.1,
-  max_depth = 3,
+  eta = c(0.3, 0.1, 0.05, 0.01, 0.005),
+  max_depth = 3:8,
   min_child_weight = 0.5,
   subsample = 0.5,
   colsample_bytree = 0.5,
-  gamma = hyp_vec,
-  lambda = hyp_vec,
-  alpha = hyp_vec,
+  gamma = c(0, 1, 10, 100, 1000),
+  lambda = c(0, 1e-2, 0.1, 1, 100, 1000),
+  alpha = c(0, 1e-2, 0.1, 1, 100, 1000),
   rmse = 0,
   trees = 0
 )
@@ -292,12 +350,12 @@ abline(0, 1)
 out_list <- list(
   baked_train = baked_train,
   baked_test = df_pred,
-  train_test_rmse = rmse,
-  train_test_r2 = r2,
+  test_test_rmse = rmse,
+  test_test_r2 = r2,
   vi = vi,
   hyper_grid = hyper_grid,
-  tidy_y = tidy(prepare, number = 2),
-  tidy_x = tidy(prepare, number = 3)
+  tidy_y = tidy(prepare, number = 3),
+  tidy_x = tidy(prepare, number = 4)
 
 )
 
