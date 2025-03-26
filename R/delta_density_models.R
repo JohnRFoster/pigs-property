@@ -10,8 +10,8 @@ set.seed(123)
 
 cutoff_date <- ymd("2023-12-31")
 
-config_name <- "hpc_dev"
-# config_name <- "default"
+# config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -123,6 +123,14 @@ yearly_summaries <- data_mis |>
          cum_take_density = cum_take / property_area_km2,
          cum_events_density = cum_events / property_area_km2) |>
   ungroup()
+
+method_per_year <- data |>
+  mutate(year = year(end_dates)) |>
+  group_by(propertyID, year, method) |>
+  summarise(events = n(),
+            units = sum(trap_count)) |>
+  ungroup() |>
+  mutate(units_per_event = units / events)
 
 events_by_method_per_year <- method_per_year |>
   select(propertyID, year, events, method) |>
