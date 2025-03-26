@@ -10,8 +10,8 @@ set.seed(123)
 
 cutoff_date <- ymd("2023-12-31")
 
-# config_name <- "hpc_dev"
-config_name <- "default"
+config_name <- "hpc_dev"
+# config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
