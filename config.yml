@@ -1,4 +1,5 @@
 default:
+  eta: 0.1
   interval: 4
   dev: TRUE
   informed: FALSE
@@ -6,6 +7,7 @@ default:
   params_check: !expr c("beta_p","beta1","log_gamma","log_rho","phi_mu","psi_phi","log_nu","p_mu")
   data_repo: "C:/Users/John.Foster/OneDrive - USDA/Desktop/fosteR/pigs-statistical/data"
   out_dir: "C:/Users/John.Foster/Downloads/iterativeFits2"
+  out_delta: "C:/Users/John.Foster/Downloads/iterativeFits2"
   out_ml: "C:/Users/John.Foster/Downloads/ml"
   first_fit: "256properties_uninformedPriors_combined"
   file_mis: "insitu/MIS.Effort.Take.All.Methods.Daily.Events.01JUL2024.csv"
