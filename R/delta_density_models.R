@@ -10,11 +10,12 @@ set.seed(123)
 
 cutoff_date <- ymd("2023-12-31")
 
-config_name <- "hpc_dev"
-# config_name <- "default"
+# config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
+source("R/ml_recipe.R")
 
 # ===================================================
 # Data ingest ----
@@ -40,86 +41,30 @@ top_dir <- config$out_dir
 
 posterior_path <- file.path(top_dir, if_dir, "modelData.rds")
 data <- read_rds(posterior_path) |>
+  filter(end_dates <= cutoff_date) |>
   mutate(method = if_else(method == "FIREARMS", "Firearms", method),
-         method = if_else(method == "FIXED WING", "Fixed wing", method),
+         method = if_else(method == "FIXED WING", "fixedWing", method),
          method = if_else(method == "HELICOPTER", "Helicopter", method),
          method = if_else(method == "SNARE", "Snare", method),
-         method = if_else(method == "TRAPS", "Trap", method))
+         method = if_else(method == "TRAPS", "Trap", method),
+         year = year(end_dates))
 
 posterior_path <- file.path(top_dir, if_dir, "densitySummaries.rds")
 density <- read_rds(posterior_path)
 
-n_return <- data |>
-  select(propertyID, primary_period, method) |>
-  distinct() |>
-  pivot_wider(names_from = method,
-              values_from = method) |>
-  unite(method,
-        -c(propertyID, primary_period),
-        sep = ", ",
-        na.rm = TRUE) |>
-  group_by(propertyID, method) |>
-  mutate(return_interval = c(0, diff(primary_period))) |>
-  ungroup() |>
-  rename(methods_used = method)
-
-data_grouped <- data |>
-  group_by(propertyID, agrp_prp_id, start_dates, end_dates, st_name, cnty_name, farm_bill,
-           alws_agrprop_id, property, primary_period, property_area_km2, county_code) |>
-  summarise(total_take = sum(take),
-            total_effort_per = sum(effort_per),
-            n_events = n()) |>
-  ungroup() |>
-  mutate(take_density = total_take / property_area_km2,
-         farm_bill = if_else(is.na(farm_bill), 0, farm_bill)) |>
-  left_join(density) |>
-  left_join(n_return) |>
-  mutate(year = year(end_dates))
-
-data_mis <- data_grouped |>
-  filter(end_dates <= cutoff_date) |>
-  mutate(abundance_estimate = round(`0.5` * property_area_km2)) |>
-  rename(density_estimate = `0.5`) |>
-  select(propertyID, end_dates, year, st_name, cnty_name, county_code, farm_bill,
-         property_area_km2, total_take, take_density, density_estimate, abundance_estimate,
-         n_events, methods_used)
-
-# filename <- file.path(data_repo, 'ecoregions', 'Cnty.lower48.EcoRegions.Level2.shp')
-# ecoregions <- terra::vect(filename) |>
-#   as_tibble() |>
-#   rename(st_name = STATE_NAME,
-#          cnty_name = NAME,
-#          county_code = FIPS,
-#          ecoregion = NA_L2NAME) |>
-#   select(st_name, county_code, ecoregion) |>
-#   mutate(st_name = toupper(st_name))
-
-first_flag <- NA
-
-yearly_summaries <- data_mis |>
-  mutate(total_take = if_else(is.na(total_take), 0, total_take),
-         n_events = if_else(is.na(n_events), 0, n_events)) |>
-  # left_join(ecoregions) |>
-  group_by(propertyID, year, st_name, county_code, property_area_km2, farm_bill) |>
-  summarise(med_density = median(density_estimate),
-            sum_take = sum(total_take),
-            avg_take = mean(total_take),
-            sum_events = sum(n_events),
-            avg_events = mean(n_events)
-            ) |>
-  arrange(propertyID, year) |>
-  group_by(propertyID) |>
-  mutate(#delta_density = c(first_flag, diff(med_density)),
-         delta_take = c(first_flag, diff(sum_take)),
-         delta_events = c(first_flag, diff(sum_events)),
-         sum_take_density = sum_take / property_area_km2,
-         avg_take_density = avg_take / property_area_km2,
-         sum_events_density = sum_events / property_area_km2,
-         avg_events_density = avg_events / property_area_km2) |>
-  ungroup()
+## event metrics ----
+events_per_year <- data |>
+  group_by(propertyID, agrp_prp_id, property_area_km2, year) |>
+  summarise(all_take = sum(take),
+            all_events = n(),
+            all_units = sum(trap_count)) |>
+  mutate(all_take_density = all_take / property_area_km2,
+         all_events_density = all_events / property_area_km2,
+         all_units_density = all_units / property_area_km2,
+         avg_take = all_take / all_events,
+         avg_take_density = avg_take / property_area_km2)
 
 method_per_year <- data |>
-  mutate(year = year(end_dates)) |>
   group_by(propertyID, year, method) |>
   summarise(events = n(),
             units = sum(trap_count),
@@ -127,8 +72,7 @@ method_per_year <- data |>
   ungroup() |>
   mutate(units_per_event = units / events,
          take_per_unit = take / units,
-         take_per_event = take / events,
-         method = if_else(method == "Fixed wing", "fixedWing", method))
+         take_per_event = take / events)
 
 make_wide_feature <- function(df, col){
   df |>
@@ -147,26 +91,89 @@ units_per_event_by_method <- make_wide_feature(method_per_year, "units_per_event
 take_per_unit_by_method <- make_wide_feature(method_per_year, "take_per_unit")
 take_per_event_by_method <- make_wide_feature(method_per_year, "take_per_event")
 
-
-
-data_ml <- yearly_summaries |>
-  left_join(data_obs) |>
-  left_join(events_by_method) |>
+all_events_per_year <- left_join(
+  events_per_year,
+  events_by_method
+) |>
   left_join(units_by_method) |>
   left_join(take_by_method) |>
   left_join(units_per_event_by_method) |>
   left_join(take_per_unit_by_method) |>
-  left_join(take_per_event_by_method) |>
+  left_join(take_per_event_by_method)
+
+## primary period metrics ----
+# (a primary period is a group of events)
+
+n_return <- data |>
+  select(propertyID, primary_period, method) |>
+  distinct() |>
+  pivot_wider(names_from = method,
+              values_from = method) |>
+  unite(method,
+        -c(propertyID, primary_period),
+        sep = ", ",
+        na.rm = TRUE) |>
+  group_by(propertyID, method) |>
+  mutate(return_interval = c(0, diff(primary_period))) |>
+  ungroup() |>
+  rename(methods_used = method)
+
+data_grouped <- data |>
+  group_by(propertyID, agrp_prp_id, year,  start_dates, end_dates, st_name, cnty_name, farm_bill,
+           alws_agrprop_id, property, primary_period, property_area_km2, county_code, trap_count) |>
+  summarise(total_take_in_pp = sum(take),
+            n_events_in_pp = n(),
+            n_units_in_pp = sum(trap_count)) |>
+  ungroup() |>
+  mutate(take_density_in_pp = total_take_in_pp / property_area_km2,
+         n_events_density_in_pp = n_events_in_pp / property_area_km2,
+         n_units_density  = n_units_in_pp / property_area_km2,
+         farm_bill = if_else(is.na(farm_bill), 0, farm_bill)) |>
+  left_join(density) |>
+  left_join(n_return)
+
+data_pp <- data_grouped |>
+  rename(density_estimate = `0.5`) |>
+  select(propertyID, end_dates, year, st_name, cnty_name, county_code, farm_bill,
+         property_area_km2, total_take_in_pp, take_density_in_pp, density_estimate,
+         n_events_in_pp, methods_used, n_events_density_in_pp)
+
+first_flag <- NA
+
+yearly_summaries <- data_pp |>
+  group_by(propertyID, year, st_name, county_code, property_area_km2, farm_bill) |>
+  summarise(med_density = median(density_estimate),
+            all_take = sum(total_take_in_pp),
+            avg_take_in_pp = mean(total_take_in_pp),
+            all_events = sum(n_events_in_pp),
+            avg_events_in_pp = mean(n_events_in_pp),
+            n_sampled_pp = n()
+            ) |>
+  arrange(propertyID, year) |>
+  group_by(propertyID) |>
+  mutate(delta_density = c(first_flag, diff(med_density)),
+         delta_year = c(first_flag, diff(year)),
+         delta_take = c(first_flag, diff(all_take)),
+         delta_events = c(first_flag, diff(all_events)),
+         avg_take_density_in_pp = avg_take_in_pp / property_area_km2,
+         avg_event_density_in_pp = avg_events_in_pp / property_area_km2,
+         events_per_pp = all_events / n_sampled_pp,
+         take_per_pp = all_take / n_sampled_pp) |>
+  ungroup()
+
+data_ml <- yearly_summaries |>
+  left_join(all_events_per_year) |>
+  left_join(data_obs) |>
   mutate(
     y = med_density,
-    year = ymd(paste0(year, "-01-01")),
+    year_fac = as.factor(year),
     farm_bill = as.factor(farm_bill),
     propertyID = factor(propertyID),
     st_name = factor(st_name),
     county_code = factor(county_code),
-    state_year = factor(paste(st_name, year)),
-    county_year = factor(paste(county_code, year)),
-    property_year = factor(paste(propertyID, year))) |>
+    state_year = factor(paste(st_name, year_fac)),
+    county_year = factor(paste(county_code, year_fac)),
+    property_year = factor(paste(propertyID, year_fac))) |>
     # ecoregion = factor(ecoregion),
     # eco_year = factor(paste(ecoregion, year))) |>
   select(-med_density)
@@ -251,90 +258,7 @@ p_test <- round(nrow(df_test) / nrow(data_ml), 2) * 100
 
 message("Train test split across data: ", p_train, ":", p_test)
 
-# move to functions script
-my_recipe <- function(data){
-  require(rsample)
-  require(recipes)
-
-  blueprint <- recipe(y ~ ., data = data) |>
-
-  # recommended order from recipes package
-
-  # Impute (does not apply)
-  # Handle factor levels
-    step_novel(all_nominal_predictors()) |>
-    step_date(year, features = "year", keep_original_cols = FALSE) |>
-
-  # Individual transformations for skewness and other issues
-    step_YeoJohnson(all_outcomes()) |>
-    step_YeoJohnson(all_numeric_predictors()) |>
-
-  # Discretize (if needed and if you have no other choice; does not apply)
-  # Create dummy variables
-    step_dummy(all_nominal_predictors()) |>
-
-  # Create interactions
-    step_interact(terms = ~sum_take:sum_events) |>
-    step_interact(terms = ~avg_take:avg_events) |>
-    step_interact(terms = ~sum_take_density:sum_events_density) |>
-    step_interact(terms = ~avg_take_density:avg_events_density) |>
-
-    step_interact(terms = ~sum_take:rural.road.density) |>
-    step_interact(terms = ~sum_take:prop.pub.land) |>
-    step_interact(terms = ~sum_take:mean.ruggedness) |>
-    step_interact(terms = ~sum_take:mean.canopy.density) |>
-
-    step_interact(terms = ~sum_take_density:rural.road.density) |>
-    step_interact(terms = ~sum_take_density:prop.pub.land) |>
-    step_interact(terms = ~sum_take_density:mean.ruggedness) |>
-    step_interact(terms = ~sum_take_density:mean.canopy.density) |>
-
-    step_interact(terms = ~avg_take:rural.road.density) |>
-    step_interact(terms = ~avg_take:prop.pub.land) |>
-    step_interact(terms = ~avg_take:mean.ruggedness) |>
-    step_interact(terms = ~avg_take:mean.canopy.density) |>
-
-    step_interact(terms = ~avg_take_density:rural.road.density) |>
-    step_interact(terms = ~avg_take_density:prop.pub.land) |>
-    step_interact(terms = ~avg_take_density:mean.ruggedness) |>
-    step_interact(terms = ~avg_take_density:mean.canopy.density) |>
-
-    step_interact(terms = ~rural.road.density:starts_with("Helicopter")) |>
-    step_interact(terms = ~prop.pub.land:starts_with("Helicopter")) |>
-    step_interact(terms = ~mean.ruggedness:starts_with("Helicopter")) |>
-    step_interact(terms = ~mean.canopy.density:starts_with("Helicopter")) |>
-
-    step_interact(terms = ~rural.road.density:starts_with("fixedWing")) |>
-    step_interact(terms = ~prop.pub.land:starts_with("fixedWing")) |>
-    step_interact(terms = ~mean.ruggedness:starts_with("fixedWing")) |>
-    step_interact(terms = ~mean.canopy.density:starts_with("fixedWing")) |>
-
-    step_interact(terms = ~rural.road.density:starts_with("Trap")) |>
-    step_interact(terms = ~prop.pub.land:starts_with("Trap")) |>
-    step_interact(terms = ~mean.ruggedness:starts_with("Trap")) |>
-    step_interact(terms = ~mean.canopy.density:starts_with("Trap")) |>
-
-    step_interact(terms = ~rural.road.density:starts_with("Snare")) |>
-    step_interact(terms = ~prop.pub.land:starts_with("Snare")) |>
-    step_interact(terms = ~mean.ruggedness:starts_with("Snare")) |>
-    step_interact(terms = ~mean.canopy.density:starts_with("Snare")) |>
-
-    step_interact(terms = ~rural.road.density:starts_with("Firearms")) |>
-    step_interact(terms = ~prop.pub.land:starts_with("Firearms")) |>
-    step_interact(terms = ~mean.ruggedness:starts_with("Firearms")) |>
-    step_interact(terms = ~mean.canopy.density:starts_with("Firearms")) |>
-
-  # Normalization steps (center, scale, range, etc; does not apply)
-  # Multivariate transformation (e.g. PCA, spatial sign, etc; does not apply)
-
-  # filter
-    step_nzv(all_predictors())
-
-  return(blueprint)
-
-}
-
-df_blueprint <- df_train |> select(-partition)
+df_blueprint <- df_train |> select(-partition, -year)
 blueprint <- my_recipe(df_blueprint)
 prepare <- prep(blueprint, training = df_blueprint)
 baked_train <- bake(prepare, new_data = df_blueprint)
@@ -354,8 +278,16 @@ hyper_grid <- expand_grid(
   min_child_weight = 0.5,
   subsample = 0.5,
   colsample_bytree = 0.5,
+
+  # pseudo-regularization hyperparameter, controls the complexity of a given tree
+  # worth exploring as trees become deeper and when a significant difference between
+  # train and test CV error. 0 = no regularization
   gamma = c(0, 1, 10, 100, 1000),
+
+  # L2 regularization (ridge penalty) push coefficients near zero
   lambda = c(0, 1e-2, 0.1, 1, 100, 1000),
+
+  # L1 regularization (lasso penalty) push coefficients all the way to zero
   alpha = c(0, 1e-2, 0.1, 1, 100, 1000),
   rmse = 0,
   trees = 0
@@ -434,7 +366,7 @@ make_prediction <- function(model, new_data){
   new_data |> mutate(pred = pred)
 }
 
-test2 <- df_test |> select(-partition)
+test2 <- df_test |> select(-partition, -year)
 baked_test <- bake(prepare, new_data = test2)
 
 df_pred <- make_prediction(fit, baked_test)
