@@ -395,8 +395,8 @@ out_list <- list(
   test_test_r2 = r2,
   vi = vi,
   hyper_grid = hyper_grid,
-  tidy_y = tidy(prepare, number = 3),
-  tidy_x = tidy(prepare, number = 4),
+  tidy_y = tidy(prepare, number = 2),
+  tidy_x = tidy(prepare, number = 3),
   raw_train = df_train,
   data = bind_rows(df_train, df_test)
 
