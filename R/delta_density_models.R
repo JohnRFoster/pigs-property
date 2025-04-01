@@ -10,8 +10,8 @@ set.seed(123)
 
 cutoff_date <- ymd("2023-12-31")
 
-config_name <- "hpc_dev"
-# config_name <- "default"
+# config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -247,9 +247,11 @@ test2 <- data_ml |>
   mutate(partition = "test_last_year")
 
 # held out properties because they only have one year
+# delta_density = NA because we want to test as if these properties never had density estimates
 test3 <- data_ml |>
   filter(propertyID %in%  multi_year_properties[test_draws_multi]) |>
-  mutate(partition = "test_holdout")
+  mutate(partition = "test_holdout",
+         delta_density = NA)
 
 df_test <- bind_rows(test1, test2, test3)
 
