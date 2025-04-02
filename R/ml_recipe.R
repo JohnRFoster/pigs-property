@@ -19,7 +19,7 @@ my_recipe <- function(data){
     step_dummy(all_nominal_predictors()) |>
 
     # Create interactions
-    step_interact(terms = ~delta_density:delta_year) |>
+    step_interact(terms = ~density_m1:delta_year) |>
 
     step_interact(terms = ~all_take:all_events) |>
     step_interact(terms = ~all_take:all_units) |>

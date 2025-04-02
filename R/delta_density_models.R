@@ -10,8 +10,8 @@ set.seed(123)
 
 cutoff_date <- ymd("2023-12-31")
 
-config_name <- "hpc_dev"
-# config_name <- "default"
+# config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
@@ -151,8 +151,7 @@ yearly_summaries <- data_pp |>
             ) |>
   arrange(propertyID, year) |>
   group_by(propertyID) |>
-  mutate(delta_density = c(first_flag, diff(med_density)),
-         delta_year = c(first_flag, diff(year)),
+  mutate(delta_year = c(first_flag, diff(year)),
          delta_take = c(first_flag, diff(all_take)),
          delta_events = c(first_flag, diff(all_events)),
          avg_take_density_in_pp = avg_take_in_pp / property_area_km2,
@@ -161,7 +160,7 @@ yearly_summaries <- data_pp |>
          take_per_pp = all_take / n_sampled_pp) |>
   ungroup()
 
-data_ml <- yearly_summaries |>
+data_all <- yearly_summaries |>
   left_join(all_events_per_year) |>
   left_join(data_obs) |>
   mutate(
@@ -178,10 +177,10 @@ data_ml <- yearly_summaries |>
     # eco_year = factor(paste(ecoregion, year))) |>
   select(-med_density)
 
-all_properties <- unique(data_ml$propertyID)
+all_properties <- unique(data_all$propertyID)
 
 # these properties will become testing properties
-single_year_properties <- data_ml |>
+single_year_properties <- data_all |>
   group_by(propertyID) |>
   count() |>
   ungroup() |>
@@ -190,7 +189,7 @@ single_year_properties <- data_ml |>
   unique()
 
 # set of properties to draw train/test
-multi_year_properties <- data_ml |>
+multi_year_properties <- data_all |>
   filter(!propertyID %in% single_year_properties) |>
   pull(propertyID) |>
   unique()
@@ -202,6 +201,18 @@ n_all <- length(all_properties)
 assertthat::assert_that(
   n_single_year + n_multi_year == n_all
   )
+
+tmp1 <- data_all |>
+  filter(propertyID %in% multi_year_properties) |>
+  group_by(propertyID) |>
+  mutate(density_m1 = c(first_flag, y[1:(n()-1)])) |>
+  ungroup()
+
+tmp2 <- data_all |>
+  filter(propertyID %in% single_year_properties) |>
+  mutate(density_m1 = NA)
+
+data_ml <- bind_rows(tmp1, tmp2)
 
 n_test_single <- round(0.1 * n_single_year)
 test_draws_single <- sample.int(n_single_year, n_test_single)
@@ -247,11 +258,11 @@ test2 <- data_ml |>
   mutate(partition = "test_last_year")
 
 # held out properties because they only have one year
-# delta_density = NA because we want to test as if these properties never had density estimates
+# density_m1 = NA because we want to test as if these properties never had density estimates
 test3 <- data_ml |>
   filter(propertyID %in%  multi_year_properties[test_draws_multi]) |>
   mutate(partition = "test_holdout",
-         delta_density = NA)
+         density_m1 = NA)
 
 df_test <- bind_rows(test1, test2, test3)
 
