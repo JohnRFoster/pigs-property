@@ -1,5 +1,5 @@
 default:
-  eta: 0.1
+  eta: 0.3
   interval: 4
   dev: TRUE
   informed: FALSE
