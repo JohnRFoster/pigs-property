@@ -156,8 +156,7 @@ yearly_summaries <- data_pp |>
          delta_events = c(first_flag, diff(all_events)),
          avg_take_density_in_pp = avg_take_in_pp / property_area_km2,
          avg_event_density_in_pp = avg_events_in_pp / property_area_km2,
-         events_per_pp = all_events / n_sampled_pp,
-         take_per_pp = all_take / n_sampled_pp) |>
+         events_per_pp = all_events / n_sampled_pp) |>
   ungroup()
 
 data_all <- yearly_summaries |>
