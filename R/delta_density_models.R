@@ -10,11 +10,12 @@ set.seed(123)
 
 cutoff_date <- ymd("2023-12-31")
 
-config_name <- "hpc_dev"
-# config_name <- "default"
+# config_name <- "hpc_dev"
+config_name <- "default"
 config <- config::get(config = config_name)
 
 source("R/functions_data.R")
+source("R/functions_ml.R")
 source("R/ml_recipe.R")
 
 # ===================================================
@@ -27,14 +28,6 @@ data_repo <- config$data_repo
 file <- file.path(data_repo, config$file_land)
 data_obs <- get_obs_covars(file) |>
   select(rural.road.density, prop.pub.land, mean.ruggedness, mean.canopy.density, county_code)
-
-
-## join with farm bill properties ----
-data_farm_bill <- read_csv(file.path(data_repo, "All_FB_Agreements_long_2024-05-30.csv"))
-farm_bill_properties <- data_farm_bill |>
-  rename(alws_agrprop_id = propertyID) |>
-  select(-agreement_name, -property_name) |>
-  mutate(farm_bill = 1)
 
 if_dir <- "11_posterior"
 top_dir <- config$out_dir
@@ -53,145 +46,20 @@ posterior_path <- file.path(top_dir, if_dir, "densitySummaries.rds")
 density <- read_rds(posterior_path)
 
 ## event metrics ----
-events_per_year <- data |>
-  group_by(propertyID, agrp_prp_id, property_area_km2, year) |>
-  summarise(all_take = sum(take),
-            all_events = n(),
-            all_units = sum(trap_count)) |>
-  mutate(all_take_density = all_take / property_area_km2,
-         all_events_density = all_events / property_area_km2,
-         all_units_density = all_units / property_area_km2,
-         avg_take = all_take / all_events,
-         avg_take_density = avg_take / property_area_km2)
-
-method_per_year <- data |>
-  group_by(propertyID, year, method) |>
-  summarise(events = n(),
-            units = sum(trap_count),
-            take = sum(take)) |>
-  ungroup() |>
-  mutate(units_per_event = units / events,
-         take_per_unit = take / units,
-         take_per_event = take / events)
-
-make_wide_feature <- function(df, col){
-  df |>
-    select(propertyID, year, method, all_of(col)) |>
-    mutate(newname = paste0(method, "_", col)) |>
-    select(-method) |>
-    pivot_wider(names_from = newname,
-                values_from = all_of(col),
-                values_fill = 0)
-}
-
-events_by_method <- make_wide_feature(method_per_year, "events")
-units_by_method <- make_wide_feature(method_per_year, "units")
-take_by_method <- make_wide_feature(method_per_year, "take")
-units_per_event_by_method <- make_wide_feature(method_per_year, "units_per_event")
-take_per_unit_by_method <- make_wide_feature(method_per_year, "take_per_unit")
-take_per_event_by_method <- make_wide_feature(method_per_year, "take_per_event")
-
-all_events_per_year <- left_join(
-  events_per_year,
-  events_by_method
-) |>
-  left_join(units_by_method) |>
-  left_join(take_by_method) |>
-  left_join(units_per_event_by_method) |>
-  left_join(take_per_unit_by_method) |>
-  left_join(take_per_event_by_method)
+all_events_per_year <- create_all_events_per_year(data)
 
 ## primary period metrics ----
 # (a primary period is a group of events)
+yearly_summaries_pp <- create_pp_data(data, density)
 
-n_return <- data |>
-  select(propertyID, primary_period, method) |>
-  distinct() |>
-  pivot_wider(names_from = method,
-              values_from = method) |>
-  unite(method,
-        -c(propertyID, primary_period),
-        sep = ", ",
-        na.rm = TRUE) |>
-  group_by(propertyID, method) |>
-  mutate(return_interval = c(0, diff(primary_period))) |>
-  ungroup() |>
-  rename(methods_used = method)
-
-data_grouped <- data |>
-  group_by(propertyID, agrp_prp_id, year,  start_dates, end_dates, st_name, cnty_name, farm_bill,
-           alws_agrprop_id, property, primary_period, property_area_km2, county_code, trap_count) |>
-  summarise(total_take_in_pp = sum(take),
-            n_events_in_pp = n(),
-            n_units_in_pp = sum(trap_count)) |>
-  ungroup() |>
-  mutate(take_density_in_pp = total_take_in_pp / property_area_km2,
-         n_events_density_in_pp = n_events_in_pp / property_area_km2,
-         n_units_density  = n_units_in_pp / property_area_km2,
-         farm_bill = if_else(is.na(farm_bill), 0, farm_bill)) |>
-  left_join(density) |>
-  left_join(n_return)
-
-data_pp <- data_grouped |>
-  rename(density_estimate = `0.5`) |>
-  select(propertyID, end_dates, year, st_name, cnty_name, county_code, farm_bill,
-         property_area_km2, total_take_in_pp, take_density_in_pp, density_estimate,
-         n_events_in_pp, methods_used, n_events_density_in_pp)
-
-first_flag <- NA
-
-yearly_summaries <- data_pp |>
-  group_by(propertyID, year, st_name, county_code, property_area_km2, farm_bill) |>
-  summarise(med_density = median(density_estimate),
-            all_take = sum(total_take_in_pp),
-            avg_take_in_pp = mean(total_take_in_pp),
-            all_events = sum(n_events_in_pp),
-            avg_events_in_pp = mean(n_events_in_pp),
-            n_sampled_pp = n()
-            ) |>
-  arrange(propertyID, year) |>
-  group_by(propertyID) |>
-  mutate(delta_year = c(first_flag, diff(year)),
-         delta_take = c(first_flag, diff(all_take)),
-         delta_events = c(first_flag, diff(all_events)),
-         avg_take_density_in_pp = avg_take_in_pp / property_area_km2,
-         avg_event_density_in_pp = avg_events_in_pp / property_area_km2,
-         events_per_pp = all_events / n_sampled_pp) |>
-  ungroup()
-
-data_all <- yearly_summaries |>
-  left_join(all_events_per_year) |>
-  left_join(data_obs) |>
-  mutate(
-    y = med_density,
-    year_fac = as.factor(year),
-    farm_bill = as.factor(farm_bill),
-    propertyID = factor(propertyID),
-    st_name = factor(st_name),
-    county_code = factor(county_code),
-    state_year = factor(paste(st_name, year_fac)),
-    county_year = factor(paste(county_code, year_fac)),
-    property_year = factor(paste(propertyID, year_fac))) |>
-    # ecoregion = factor(ecoregion),
-    # eco_year = factor(paste(ecoregion, year))) |>
-  select(-med_density)
-
-all_properties <- unique(data_all$propertyID)
+## make ready for xgBoost
+data_all <- create_ml_data(yearly_summaries_pp, all_events_per_year, data_obs)
 
 # these properties will become testing properties
-single_year_properties <- data_all |>
-  group_by(propertyID) |>
-  count() |>
-  ungroup() |>
-  filter(n == 1) |>
-  pull(propertyID) |>
-  unique()
-
 # set of properties to draw train/test
-multi_year_properties <- data_all |>
-  filter(!propertyID %in% single_year_properties) |>
-  pull(propertyID) |>
-  unique()
+all_properties <- unique(data_all$propertyID)
+single_year_properties <- get_single_year_properties(data_all)
+multi_year_properties <- get_multi_year_properties(data_all)
 
 n_single_year <- length(single_year_properties)
 n_multi_year <- length(multi_year_properties)
@@ -201,52 +69,41 @@ assertthat::assert_that(
   n_single_year + n_multi_year == n_all
   )
 
-tmp1 <- data_all |>
-  filter(propertyID %in% multi_year_properties) |>
-  group_by(propertyID) |>
-  mutate(density_m1 = c(first_flag, y[1:(n()-1)])) |>
-  ungroup()
+data_ml <- create_density_m1(data_all, single_year_properties, multi_year_properties)
 
-tmp2 <- data_all |>
+take_cols <- grep("take", colnames(data_ml), value = TRUE)
+event_cols <- grep("event", colnames(data_ml), value = TRUE)
+unit_cols <- grep("unit", colnames(data_ml), value = TRUE)
+effort_cols <- c(take_cols, event_cols, unit_cols, "n_sampled_pp")
+
+# convert all single-year property take data to NA
+single_year_df <- data_ml |>
   filter(propertyID %in% single_year_properties) |>
-  mutate(density_m1 = NA)
+  mutate(density_m1 = NA,
+         replace(across(all_of(effort_cols)), !is.na(across(all_of(effort_cols))), NA))
 
-data_ml <- bind_rows(tmp1, tmp2)
-
-n_test_single <- round(0.1 * n_single_year)
-test_draws_single <- sample.int(n_single_year, n_test_single)
-
-n_test_multi <- round(0.1 * n_multi_year)
-test_draws_multi <- sample.int(n_multi_year, n_test_multi)
-
-train_properties <- c(
-  single_year_properties[-test_draws_single],
-  multi_year_properties[-test_draws_multi]
-)
-
-test_properties <- c(
-  single_year_properties[test_draws_single],
-  multi_year_properties[test_draws_multi]
-)
-
-# training properties with one year
-train1 <- data_ml |>
-  filter(propertyID %in% single_year_properties[-test_draws_single])
+n_test <- 50
+test_draws_multi <- sample.int(n_multi_year, n_test)
+test_draws_single <- sample.int(n_single_year, n_test)
 
 # training properties with multiple years without their last year
-train2 <- data_ml |>
+train1 <- data_ml |>
   filter(propertyID %in% multi_year_properties[-test_draws_multi]) |>
   group_by(propertyID) |>
   filter(year < max(year)) |>
   ungroup()
 
-df_train <- rbind(train1, train2) |>
+train2 <- single_year_df |>
+  filter(propertyID %in% single_year_properties[-test_draws_single])
+
+df_train <- bind_rows(train1, train2) |>
   mutate(partition = "train")
 
 # testing properties with one year
-test1 <- data_ml |>
+# are acting as new properties that would have no take data
+test1 <- single_year_df |>
   filter(propertyID %in% single_year_properties[test_draws_single]) |>
-  mutate(partition = "test_single_year")
+  mutate(partition = "test_unobserved")
 
 # test properties (last year from training set) with multiple years
 test2 <- data_ml |>
@@ -259,18 +116,20 @@ test2 <- data_ml |>
 # held out properties because they only have one year
 # density_m1 = NA because we want to test as if these properties never had density estimates
 test3 <- data_ml |>
-  filter(propertyID %in%  multi_year_properties[test_draws_multi]) |>
+  filter(propertyID %in% multi_year_properties[test_draws_multi]) |>
   mutate(partition = "test_holdout",
          density_m1 = NA)
 
 df_test <- bind_rows(test1, test2, test3)
+
+assertthat::assert_that(all(!df_test$rowID %in% df_train$rowID))
 
 p_train <- round(nrow(df_train) / nrow(data_ml), 2) * 100
 p_test <- round(nrow(df_test) / nrow(data_ml), 2) * 100
 
 message("Train test split across data: ", p_train, ":", p_test)
 
-df_blueprint <- df_train |> select(-partition, -year)
+df_blueprint <- df_train |> select(-partition, -year, -rowID)
 blueprint <- my_recipe(df_blueprint)
 prepare <- prep(blueprint, training = df_blueprint)
 baked_train <- bake(prepare, new_data = df_blueprint)
@@ -378,7 +237,7 @@ make_prediction <- function(model, new_data){
   new_data |> mutate(pred = pred)
 }
 
-test2 <- df_test |> select(-partition, -year)
+test2 <- df_test |> select(-partition, -year, -rowID)
 baked_test <- bake(prepare, new_data = test2)
 
 df_pred <- make_prediction(fit, baked_test)
@@ -409,6 +268,8 @@ out_list <- list(
   hyper_grid = hyper_grid,
   tidy_y = tidy(prepare, number = 2),
   tidy_x = tidy(prepare, number = 3),
+  prepare = prepare,
+  fit = fit,
   raw_train = df_train,
   data = bind_rows(df_train, df_test)
 
