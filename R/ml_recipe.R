@@ -16,6 +16,7 @@ my_recipe <- function(data){
 
     # Discretize (if needed and if you have no other choice; does not apply)
     # Create dummy variables
+    step_unknown(all_nominal_predictors()) |>
     step_dummy(all_nominal_predictors()) |>
 
     # Create interactions

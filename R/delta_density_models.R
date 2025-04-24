@@ -52,8 +52,16 @@ all_events_per_year <- create_all_events_per_year(data)
 # (a primary period is a group of events)
 yearly_summaries_pp <- create_pp_data(data, density)
 
+## want all timesteps, join
+all_timesteps <- make_all_prop_years(yearly_summaries_pp)
+
+with_county_ss <- county_sample_sizes(all_timesteps)
+nearest_neighbors <- get_take_nn(with_county_ss)
+
+data_joined <- left_join(with_county_ss, nearest_neighbors)
+
 ## make ready for xgBoost
-data_all <- create_ml_data(yearly_summaries_pp, all_events_per_year, data_obs)
+data_all <- create_ml_data(data_joined, all_events_per_year, data_obs)
 
 # these properties will become testing properties
 # set of properties to draw train/test
@@ -69,12 +77,25 @@ assertthat::assert_that(
   n_single_year + n_multi_year == n_all
   )
 
-data_ml <- create_density_m1(data_all, single_year_properties, multi_year_properties)
+data_with_m1 <- create_m1(data_all, single_year_properties, multi_year_properties)
+
+y_na <- data_with_m1 |>
+  filter(is.na(y)) |>
+  mutate(partition = "test_missing",
+         density_m1 = NA)
+
+data_ml <- data_with_m1 |>
+  filter(!is.na(y))
 
 take_cols <- grep("take", colnames(data_ml), value = TRUE)
 event_cols <- grep("event", colnames(data_ml), value = TRUE)
 unit_cols <- grep("unit", colnames(data_ml), value = TRUE)
 effort_cols <- c(take_cols, event_cols, unit_cols, "n_sampled_pp")
+
+# keep nearest neighbor and county info
+effort_cols <- effort_cols[-grep("nn", effort_cols)]
+effort_cols <- effort_cols[-grep("idw", effort_cols)]
+effort_cols <- effort_cols[-grep("county", effort_cols)]
 
 # convert all single-year property take data to NA
 single_year_df <- data_ml |>
@@ -82,7 +103,7 @@ single_year_df <- data_ml |>
   mutate(density_m1 = NA,
          replace(across(all_of(effort_cols)), !is.na(across(all_of(effort_cols))), NA))
 
-n_test <- 50
+n_test <- 20
 test_draws_multi <- sample.int(n_multi_year, n_test)
 test_draws_single <- sample.int(n_single_year, n_test)
 
@@ -96,7 +117,7 @@ train1 <- data_ml |>
 train2 <- single_year_df |>
   filter(propertyID %in% single_year_properties[-test_draws_single])
 
-df_train <- bind_rows(train1, train2) |>
+df_train_bind <- bind_rows(train1, train2) |>
   mutate(partition = "train")
 
 # testing properties with one year
@@ -120,7 +141,12 @@ test3 <- data_ml |>
   mutate(partition = "test_holdout",
          density_m1 = NA)
 
-df_test <- bind_rows(test1, test2, test3)
+df_test_bind <- bind_rows(test1, test2, test3)
+
+df_train <- df_train_bind |>
+  filter(!is.na(y))
+
+df_test <- bind_rows(df_test_bind)
 
 assertthat::assert_that(all(!df_test$rowID %in% df_train$rowID))
 
@@ -271,7 +297,8 @@ out_list <- list(
   prepare = prepare,
   fit = fit,
   raw_train = df_train,
-  data = bind_rows(df_train, df_test)
+  data = bind_rows(df_train, df_test),
+  y_na = y_na
 
 )
 
