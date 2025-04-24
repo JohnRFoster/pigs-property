@@ -154,9 +154,9 @@ make_all_prop_years <- function(df){
 
 }
 
-get_take_nn <- function(df){
+get_take_nn <- function(df, data_repo){
 
-  lat_lon <- read_csv("data/allMISlatLon.csv") |>
+  lat_lon <- read_csv(file.path(data_repo, "allMISlatLon.csv")) |>
     filter(state_flag == 0)
 
   tmp <- df |>

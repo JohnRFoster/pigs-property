@@ -56,7 +56,7 @@ yearly_summaries_pp <- create_pp_data(data, density)
 all_timesteps <- make_all_prop_years(yearly_summaries_pp)
 
 with_county_ss <- county_sample_sizes(all_timesteps)
-nearest_neighbors <- get_take_nn(with_county_ss)
+nearest_neighbors <- get_take_nn(with_county_ss, data_repo)
 
 data_joined <- left_join(with_county_ss, nearest_neighbors)
 
