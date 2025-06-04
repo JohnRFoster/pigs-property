@@ -27,8 +27,8 @@ params <- read_rds(posterior_path)
 
 glimpse(params)
 
-params <- params |>
-  slice(sample.int(nrow(params), 500, replace = TRUE))
+# params <- params |>
+#   slice(sample.int(nrow(params), 500, replace = TRUE))
 
 posterior_path <- file.path(config$out_dir, if_dir, "modelData.rds")
 data <- read_rds(posterior_path) |>
@@ -148,10 +148,10 @@ catch_model <- function(params, effort_df){
   log_theta_area <- log_theta + log_prop_searched
 
   effort_df |>
-    mutate(theta = (exp(log_theta)),
-           theta_area = (exp(log_theta_area)),
-           area_searched = (exp(lpa)),
-           prop_prop_searched = (exp(log_prop_searched)))
+    mutate(theta = mean(exp(log_theta)),
+           theta_area = mean(exp(log_theta_area)),
+           area_searched = mean(exp(lpa)),
+           prop_prop_searched = mean(exp(log_prop_searched)))
 
 }
 
