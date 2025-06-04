@@ -19,4 +19,5 @@ hpc_dev:
   out_dir: "/lustrefs/ceah/feral-swine/property-fits/iterativeFits2"
   out_ml: "/lustrefs/ceah/feral-swine/property-fits/ml"
   out_delta: "/lustrefs/ceah/feral-swine/property-fits/deltaDensity"
+  out_eom: "/lustrefs/ceah/feral-swine/property-fits/effectOfMgmt"
   n_iter: 50000

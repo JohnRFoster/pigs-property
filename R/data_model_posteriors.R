@@ -19,14 +19,13 @@ file <- file.path(data_repo, config$file_mis)
 interval <- config$interval
 dev <- config$dev
 
-top_dir <- "C:/Users/John.Foster/Downloads/iterativeFits2"
-# top_dir <- "C:/Users/John.Foster/Downloads/farm-bill"
+# top_dir <- "C:/Users/John.Foster/Downloads/iterativeFits2"
 
 if_dir <- "11_posterior"
-posterior_path <- file.path(top_dir, if_dir, "posteriorSamples.rds")
+posterior_path <- file.path(config$out_dir, if_dir, "posteriorSamples.rds")
 params <- read_rds(posterior_path)
 
-posterior_path <- file.path(top_dir, if_dir, "modelData.rds")
+posterior_path <- file.path(config$out_dir, if_dir, "modelData.rds")
 data <- read_rds(posterior_path) |>
   mutate(method = if_else(method == "FIREARMS", "Sharpshooting", method),
          method = if_else(method == "FIXED WING", "Fixed wing", method),
@@ -160,6 +159,6 @@ for(i in seq_len(nrow(hyper_grid))){
 close(pb)
 
 f <- paste0("data_model_", method_task, ".csv")
-write_csv(all_out, file.path(config$out_dir, f))
+write_csv(all_out, file.path(config$out_eom, f))
 
 glimpse(all_out)
