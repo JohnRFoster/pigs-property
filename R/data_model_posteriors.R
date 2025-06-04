@@ -10,7 +10,7 @@ config <- config::get(config = config_name)
 data_repo <- config$data_repo
 
 args <- commandArgs(trailingOnly = TRUE)
-task_id <- args[1]
+task_id <- as.numeric(args[1])
 
 message("Task: ", task_id)
 
