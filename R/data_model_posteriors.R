@@ -12,6 +12,8 @@ data_repo <- config$data_repo
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- args[1]
 
+message("Task: ", task_id)
+
 ## MIS data ----
 file <- file.path(data_repo, config$file_mis)
 interval <- config$interval
@@ -23,6 +25,8 @@ if_dir <- "11_posterior"
 posterior_path <- file.path(config$out_dir, if_dir, "posteriorSamples.rds")
 params <- read_rds(posterior_path)
 
+glimpse(params)
+
 posterior_path <- file.path(config$out_dir, if_dir, "modelData.rds")
 data <- read_rds(posterior_path) |>
   mutate(method = if_else(method == "FIREARMS", "Sharpshooting", method),
@@ -31,6 +35,7 @@ data <- read_rds(posterior_path) |>
          method = if_else(method == "SNARE", "Snare", method),
          method = if_else(method == "TRAPS", "Trap", method))
 
+glimpse(data)
 
 effort_table <- data |>
   group_by(method) |>
@@ -42,6 +47,8 @@ effort_table <- data |>
     min_area = min(property_area_km2),
     max_area = max(property_area_km2)) |>
   ungroup()
+
+glimpse(effort_table)
 
 get_grid <- function(m){
 
