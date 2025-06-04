@@ -140,11 +140,13 @@ catch_model <- function(params, effort_df){
                      c_rugged * beta_p_2 +
                      c_canopy * beta_p_3
     )
-  ) +
-    log_prop_searched
+  )
+
+  log_theta_area <- log_theta + log_prop_searched
 
   effort_df |>
     mutate(theta = median(exp(log_theta)),
+           theta_area = median(exp(log_theta_area)),
            area_searched = median(exp(lpa)),
            prop_prop_searched = median(exp(log_prop_searched)))
 
