@@ -4,8 +4,6 @@ library(readr)
 
 source("R/functions_data.R")
 
-run_date <- today()
-cutoff_date <- ymd("2023-12-31")
 config_name <- "hpc_dev"
 config <- config::get(config = config_name)
 
