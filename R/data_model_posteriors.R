@@ -148,7 +148,7 @@ method_task <- tasks[task_id]
 hyper_grid <- get_grid(method_task)
 
 all_out <- tibble()
-pb <- txtProgressBar(min = 1, max = nrow(hyper_grid), style = 3)
+pb <- txtProgressBar(min = 1, max = nrow(hyper_grid), style = 1)
 for(i in seq_len(nrow(hyper_grid))){
 
   tmp <- catch_model(params, shooting_grid[i, ])
