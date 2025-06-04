@@ -54,11 +54,11 @@ get_grid <- function(m){
 
   tmp <- effort_table |> filter(method == m)
 
-  expand_grid(
+  expand.grid(
     method = m,
     trap_count = tmp$min_units:tmp$max_units,
     effort = seq(tmp$min_effort, tmp$max_effort, length.out = 10),
-    area = seq(1.82, 150, length.out = 10),
+    area = seq(2, 150, by = 16),
     c_road_den = -3:3,
     c_rugged = -2:2,
     c_canopy = -2:2
