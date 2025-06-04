@@ -150,7 +150,7 @@ all_out <- tibble()
 pb <- txtProgressBar(min = 1, max = nrow(hyper_grid), style = 1)
 for(i in seq_len(nrow(hyper_grid))){
 
-  tmp <- catch_model(params, shooting_grid[i, ])
+  tmp <- catch_model(params, hyper_grid[i, ])
   all_out <- bind_rows(all_out, tmp)
 
   setTxtProgressBar(pb, i)
