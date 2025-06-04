@@ -54,9 +54,21 @@ get_grid <- function(m){
 
   tmp <- effort_table |> filter(method == m)
 
-  expand.grid(
+  glimpse(tmp)
+
+  if(m == "Snare"){
+    b <- 10
+  } else if(m == "Trap"){
+    b <- 5
+  } else {
+    b <- 1
+  }
+
+  tc <- seq(tmp$min_units, tmp$max_units, by = b)
+
+  expand_grid(
     method = m,
-    trap_count = tmp$min_units:tmp$max_units,
+    trap_count = tc,
     effort = seq(tmp$min_effort, tmp$max_effort, length.out = 10),
     area = seq(2, 150, by = 16),
     c_road_den = -3:3,
