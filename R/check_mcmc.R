@@ -146,7 +146,11 @@ message("Parameters Done")
 states_mcmc_list <- mcmc_list$states
 
 states_burnin <- window(states_mcmc_list, start = burnin)
-state_samples <- states_burnin |>
+
+posterior_burnin2 <- states_burnin |>
+  as.matrix()
+
+state_samples <- posterior_burnin2 |>
   as_tibble() |>
   slice(draws) |>
   mutate(np = config$np)
