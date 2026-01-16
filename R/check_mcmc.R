@@ -28,7 +28,7 @@ dest_mcmc <- file.path(out_dir, paste0(last_fit, "_mcmc"))
 dest_posterior <- file.path(out_dir, paste0(last_fit, "_posterior"))
 
 # get samples
-mcmc_list <- collate_mcmc_chunks(dest_mcmc, start = 1)
+mcmc_list <- collate_mcmc_chunks(dest_mcmc, start = 4)
 params_mcmc_list <- mcmc_list$params
 
 total_iter <- nrow(params_mcmc_list[[1]])
