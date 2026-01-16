@@ -23,7 +23,7 @@ out_dir <- config$out_dir
 files_in_out_dir <- list.files(out_dir)
 n_props_fit <- as.numeric(stringr::str_extract(files_in_out_dir, "\\d*(?=\\D)"))
 last_fit <- max(n_props_fit)
-last_fit <- "1_mcmc"
+last_fit <- 1
 dest_mcmc <- file.path(out_dir, paste0(last_fit, "_mcmc"))
 dest_posterior <- file.path(out_dir, paste0(last_fit, "_posterior"))
 
