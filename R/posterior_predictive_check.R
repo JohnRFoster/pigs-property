@@ -26,7 +26,7 @@ fname <- "stateSamples.rds"
 posterior_states <- read_rds(file.path(read_dir, fname))
 
 posterior_samples <- bind_cols(
-	posterior_parameter,
+	posterior_parameters,
 	posterior_state
 )
 
