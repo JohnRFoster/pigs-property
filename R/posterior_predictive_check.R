@@ -32,7 +32,7 @@ posterior_samples <- bind_cols(
 
 constants <- nimble_constants(
 	model_data,
-	config$interval,
+	4,
 	config$data_repo,
 	FALSE,
 	NULL
