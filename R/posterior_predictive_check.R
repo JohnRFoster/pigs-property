@@ -80,6 +80,9 @@ mcmcConf$addMonitors("N")
 Rmcmc <- buildMCMC(mcmcConf)
 Cmcmc <- compileNimble(Rmcmc)
 
+# don't need these samples but run to get chains moving
+samples <- runMCMC(Cmcmc, niter = 50000, nburnin = 5000)
+
 nodes <- colnames(posterior_samples)
 
 pp_samples <- matrix(NA, n_samp, nrow(data_for_nimble))
