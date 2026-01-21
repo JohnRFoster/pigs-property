@@ -31,11 +31,12 @@ posterior_samples <- bind_cols(
 )
 
 constants <- nimble_constants(
-	df = data_for_nimble,
-	interval = interval
+	df = model_data,
+	interval = config$interval
 )
 
-data <- nimble_data(data_for_nimble)
+data <- nimble_data(model_data)
+inits <- nimble_inits(constants = constants, data = data)
 
 Rmodel <- nimbleModel(
 	code = modelCode,
