@@ -5,13 +5,15 @@
 # ==========================================
 
 # need all timesteps whether there are observations or not
-create_all_primary_periods <- function(df){
+create_all_primary_periods <- function(df) {
   pp_min_max <- df |>
     select(property, primary_period) |>
     distinct() |>
     group_by(property) |>
-    filter(primary_period == min(primary_period) |
-             primary_period == max(primary_period)) |>
+    filter(
+      primary_period == min(primary_period) |
+        primary_period == max(primary_period)
+    ) |>
     ungroup()
 
   properties <- unique(pp_min_max$property)
@@ -19,7 +21,7 @@ create_all_primary_periods <- function(df){
   all_pp <- tibble()
   message("\nInclude all primary periods")
   pb <- txtProgressBar(max = length(properties), style = 1)
-  for(i in seq_along(properties)){
+  for (i in seq_along(properties)) {
     pid <- pp_min_max |> filter(property == properties[i])
     p_min <- min(pid$primary_period)
     p_max <- max(pid$primary_period)
@@ -36,7 +38,7 @@ create_all_primary_periods <- function(df){
 }
 
 # need to know the total number of timesteps in each property (sampled or not) for indexing
-n_timesteps <- function(df){
+n_timesteps <- function(df) {
   df |>
     group_by(property) |>
     filter(timestep == max(timestep)) |>
@@ -45,18 +47,17 @@ n_timesteps <- function(df){
 
 # index (as a matrix) for tracking abundance in long format (converting wide to long)
 # used in the process model
-N_lookup_table <- function(df){
+N_lookup_table <- function(df) {
   df |>
     mutate(n_id = 1:n()) |>
     select(-primary_period) |>
-    pivot_wider(names_from = timestep,
-                values_from = n_id) |>
+    pivot_wider(names_from = timestep, values_from = n_id) |>
     select(-property) |>
     as.matrix()
 }
 
 # calculate the cumulative number of pigs taken as a primary period progresses
-removed_in_pp_cumsum <- function(df){
+removed_in_pp_cumsum <- function(df) {
   df |>
     group_by(property, primary_period) |>
     mutate(ysum = cumsum(take) - take) |>
@@ -67,25 +68,23 @@ removed_in_pp_cumsum <- function(df){
 # the total number of pigs taken in a primary period across all methods
 # including periods without removals effort (equal to 0)
 # wide format
-total_take <- function(df_take, df_pp){
+total_take <- function(df_take, df_pp) {
   sum_take <- df_take |>
     group_by(property, primary_period) |>
     summarise(sum_take = sum(take)) |>
     ungroup()
 
-  left_join(df_pp, sum_take,
-            by = join_by(property, primary_period)) |>
+  left_join(df_pp, sum_take, by = join_by(property, primary_period)) |>
     mutate(sum_take = if_else(is.na(sum_take), 0, sum_take)) |>
     select(-primary_period, -n_id) |>
-    pivot_wider(names_from = timestep,
-                values_from = sum_take) |>
+    pivot_wider(names_from = timestep, values_from = sum_take) |>
     select(-property) |>
     as.matrix()
 }
 
 # index (long format) for which primary periods have removal effort
 # and therefore included in the data model
-N_lookup_data <- function(df_take, df_pp){
+N_lookup_data <- function(df_take, df_pp) {
   tH <- df_take |>
     select(property, primary_period)
 
@@ -97,21 +96,21 @@ N_lookup_data <- function(df_take, df_pp){
 
 # need start and end indicies for data model
 # used for estimiating p
-create_start_end <- function(df_take, df_pp){
-
+create_start_end <- function(df_take, df_pp) {
   start <- end <- numeric(nrow(df_take))
 
-  df <- left_join(df_take, df_pp,
-                  by = join_by(primary_period, property))
+  df <- left_join(df_take, df_pp, by = join_by(primary_period, property))
 
   message("Creating start/end indicies")
   pb <- txtProgressBar(max = nrow(df), style = 1)
   for (i in seq_len(nrow(df))) {
     if (df$order[i] > 1) {
-      idx <- which(df$county == df$county[i] &
-                     df$property == df$property[i] &
-                     df$timestep == df$timestep[i] &
-                     df$order < df$order[i])
+      idx <- which(
+        df$county == df$county[i] &
+          df$property == df$property[i] &
+          df$timestep == df$timestep[i] &
+          df$order < df$order[i]
+      )
       start[i] <- idx[1]
       end[i] <- idx[length(idx)]
       assertthat::are_equal(idx, start[i]:end[i])
@@ -123,23 +122,28 @@ create_start_end <- function(df_take, df_pp){
 }
 
 # informed hyper parameters for beta distribution on global pig survival
-create_surv_prior <- function(interval, data_repo){
-
+create_surv_prior <- function(interval, data_repo) {
   require(lubridate)
   require(readr)
   require(dplyr)
   require(tidyr)
 
-  data <- read_csv(file.path(data_repo, "insitu/Vital_Rate_Data.csv"),
-                   show_col_types = FALSE)
+  data <- read_csv(
+    file.path(data_repo, "insitu/Vital_Rate_Data.csv"),
+    show_col_types = FALSE
+  )
 
   data_usa <- data |>
-    filter(country == "USA",
-           time.period.end != "null",
-           time.period.start != "null",
-           !paper.ID %in% c(128, 1007, 130, 136)) |> # these papers don't have specified date ranges or are meta-analysis
-    mutate(time.period.end = mdy(time.period.end),
-           time.period.start = mdy(time.period.start))
+    filter(
+      country == "USA",
+      time.period.end != "null",
+      time.period.start != "null",
+      !paper.ID %in% c(128, 1007, 130, 136)
+    ) |> # these papers don't have specified date ranges or are meta-analysis
+    mutate(
+      time.period.end = mdy(time.period.end),
+      time.period.start = mdy(time.period.start)
+    )
 
   surv_data <- data_usa |>
     filter(!is.na(survival.prop)) |>
@@ -151,19 +155,24 @@ create_surv_prior <- function(interval, data_repo){
       contains("hunting"),
       state,
       contains("time"),
-      method.for.data)
+      method.for.data
+    )
 
   surv_mu <- surv_data |>
-    mutate(weeks = as.numeric(time.period.end - time.period.start)/7,
-           weeks4 = weeks / interval,
-           survival.per.4week = survival.prop ^ (1/weeks4),
-           logit.survival.per.4week = boot::logit(survival.per.4week)) |>
+    mutate(
+      weeks = as.numeric(time.period.end - time.period.start) / 7,
+      weeks4 = weeks / interval,
+      survival.per.4week = survival.prop^(1 / weeks4),
+      logit.survival.per.4week = boot::logit(survival.per.4week)
+    ) |>
     filter(survival.per.4week > 0) |>
-    mutate(scale_factor = survival.per.4week/survival.prop)
+    mutate(scale_factor = survival.per.4week / survival.prop)
 
   surv_mu_summary <- surv_mu |>
-    summarise(mu = mean(survival.per.4week),
-              mu.logit = mean(logit.survival.per.4week))
+    summarise(
+      mu = mean(survival.per.4week),
+      mu.logit = mean(logit.survival.per.4week)
+    )
 
   surv_var <- surv_data |>
     filter(survival.var.type %in% c("SD", "95% CI"))
@@ -174,15 +183,22 @@ create_surv_prior <- function(interval, data_repo){
 
   surv_sd_calc <- surv_var |>
     filter(survival.var.type == "95% CI") |>
-    mutate(low.CI = as.numeric(stringr::str_extract(survival.var, "[[:graph:]]*(?=\\-)")),
-           high.CI = as.numeric(stringr::str_extract(survival.var, "(?<=\\-)[[:graph:]]*")),
-           sd_low = (low.CI - survival.prop) / -1.96,
-           sd_high = (high.CI - survival.prop) / 1.96) |>
+    mutate(
+      low.CI = as.numeric(stringr::str_extract(
+        survival.var,
+        "[[:graph:]]*(?=\\-)"
+      )),
+      high.CI = as.numeric(stringr::str_extract(
+        survival.var,
+        "(?<=\\-)[[:graph:]]*"
+      )),
+      sd_low = (low.CI - survival.prop) / -1.96,
+      sd_high = (high.CI - survival.prop) / 1.96
+    ) |>
     group_by(unique.ID) |>
     summarise(sd = max(sd_high, sd_low))
 
-  surv_var_join <- left_join(surv_var, surv_sd_calc,
-                             by = join_by(unique.ID)) |>
+  surv_var_join <- left_join(surv_var, surv_sd_calc, by = join_by(unique.ID)) |>
     filter(survival.var.type != "SD")
 
   scale_ids <- surv_mu |>
@@ -190,9 +206,11 @@ create_surv_prior <- function(interval, data_repo){
 
   surv_variance <- bind_rows(surv_var_join, surv_sd) |>
     left_join(scale_ids, by = join_by(unique.ID)) |>
-    mutate(variance = sd^2,
-           variance.4week = variance * scale_factor^2,
-           sd.4week = sqrt(variance.4week))
+    mutate(
+      variance = sd^2,
+      variance.4week = variance * scale_factor^2,
+      sd.4week = sqrt(variance.4week)
+    )
 
   surv_sd_summary <- surv_variance |>
     pull(sd.4week) |>
@@ -210,27 +228,27 @@ create_surv_prior <- function(interval, data_repo){
 }
 
 # matrix of landscape covariates for data model
-create_X <- function(df, cols = c("c_road_den", "c_rugged", "c_canopy")){
+create_X <- function(df, cols = c("c_road_den", "c_rugged", "c_canopy")) {
   df |>
     select(all_of(cols)) |>
     as.matrix()
 }
 
-get_prior_hyperparams <- function(informed, posterior_path = NULL, data_repo = NULL){
-
-  if(informed){
-
+get_prior_hyperparams <- function(
+  informed,
+  posterior_path = NULL,
+  data_repo = NULL
+) {
+  if (informed) {
     rds <- file.path(posterior_path, "posteriorSamples.rds")
     post <- read_rds(rds)
 
-    get_vec <- function(df, node){
+    get_vec <- function(df, node) {
       df |>
         select(contains(node)) |>
-        pivot_longer(cols = everything(),
-                     names_to = "node") |>
+        pivot_longer(cols = everything(), names_to = "node") |>
         group_by(node) |>
-        summarise(mu = mean(value),
-                  tau = 1/var(value))
+        summarise(mu = mean(value), tau = 1 / var(value))
     }
 
     log_rho <- get_vec(post, "log_rho")
@@ -271,9 +289,8 @@ get_prior_hyperparams <- function(informed, posterior_path = NULL, data_repo = N
       log_nu_mu = log_nu$mu,
       log_nu_tau = log_nu$tau
     )
-
   } else {
-    survival_prior <- create_surv_prior(interval, data_repo)
+    survival_prior <- create_surv_prior(4, data_repo)
 
     hyperparams <- list(
       log_rho_mu = rep(0, 5),
@@ -298,22 +315,53 @@ get_prior_hyperparams <- function(informed, posterior_path = NULL, data_repo = N
 }
 
 
-
 # ==========================================
 # Create lists for nimble ----
 # ==========================================
 
-nimble_constants <- function(df, interval, data_repo, informed, posterior_path = NULL){
-
+nimble_constants <- function(
+  df,
+  interval,
+  data_repo,
+  informed,
+  posterior_path = NULL
+) {
   # mean litter size year from VerCauteren et al. 2019 pg 63
   data_ls <- round(
     c(
-      5.6, 6.1, 5.6, 6.1, 4.2, 5.0, 5.0, 6.5, 5.5, 6.8,
-      5.6, 5.9, 4.9, 5.1, 4.5, 4.7, 5.3, 5.7, 7.4, 8.4,
-      4.7, 4.9, 3.0, 3.0, 4.8, 4.8, 4.2, 5.4, 4.7, 5.2, 5.4
+      5.6,
+      6.1,
+      5.6,
+      6.1,
+      4.2,
+      5.0,
+      5.0,
+      6.5,
+      5.5,
+      6.8,
+      5.6,
+      5.9,
+      4.9,
+      5.1,
+      4.5,
+      4.7,
+      5.3,
+      5.7,
+      7.4,
+      8.4,
+      4.7,
+      4.9,
+      3.0,
+      3.0,
+      4.8,
+      4.8,
+      4.2,
+      5.4,
+      4.7,
+      5.2,
+      5.4
     )
   )
-
 
   all_primary_periods <- create_all_primary_periods(df)
   n_time_prop <- n_timesteps(all_primary_periods)
@@ -323,7 +371,7 @@ nimble_constants <- function(df, interval, data_repo, informed, posterior_path =
   N_full_unique <- nH_p |> unique()
   N_quant_unique <- setdiff(seq(1, max(N_full_unique)), N_full_unique)
   rem <- total_take(df, all_primary_periods)
-  targets::tar_assert_true(all(rem[,1] != 0))
+  targets::tar_assert_true(all(rem[, 1] != 0))
   X <- create_X(df)
   start_end <- create_start_end(df, all_primary_periods)
 
@@ -353,22 +401,50 @@ nimble_constants <- function(df, interval, data_repo, informed, posterior_path =
     pp_len = interval * 7
   )
 
-  prior_hyperparams <- get_prior_hyperparams(informed = informed,
-                                             posterior_path = posterior_path,
-                                             data_repo = data_repo)
+  prior_hyperparams <- get_prior_hyperparams(
+    informed = informed,
+    posterior_path = posterior_path,
+    data_repo = data_repo
+  )
 
   append(constants, prior_hyperparams)
-
 }
 
-nimble_data <- function(df){
-
+nimble_data <- function(df) {
   # mean litter size year from VerCauteren et al. 2019 pg 63
   data_ls <- round(
     c(
-      5.6, 6.1, 5.6, 6.1, 4.2, 5.0, 5.0, 6.5, 5.5, 6.8,
-      5.6, 5.9, 4.9, 5.1, 4.5, 4.7, 5.3, 5.7, 7.4, 8.4,
-      4.7, 4.9, 3.0, 3.0, 4.8, 4.8, 4.2, 5.4, 4.7, 5.2, 5.4
+      5.6,
+      6.1,
+      5.6,
+      6.1,
+      4.2,
+      5.0,
+      5.0,
+      6.5,
+      5.5,
+      6.8,
+      5.6,
+      5.9,
+      4.9,
+      5.1,
+      4.5,
+      4.7,
+      5.3,
+      5.7,
+      7.4,
+      8.4,
+      4.7,
+      4.9,
+      3.0,
+      3.0,
+      4.8,
+      4.8,
+      4.2,
+      5.4,
+      4.7,
+      5.2,
+      5.4
     )
   )
 
@@ -400,19 +476,16 @@ nimble_data <- function(df){
 # Create inits for nimble ----
 # ==========================================
 
-
-nimble_inits <- function(constants_nimble, data_nimble, buffer = 1000){
-
+nimble_inits <- function(constants_nimble, data_nimble, buffer = 1000) {
   with(append(constants_nimble, data_nimble), {
-
     beta1 <- jitter(c(-1, -3.75, -0.25, 0.3, -1.5))
-    beta_p <- matrix(jitter(
-      c( 1.75,  1.5,    0,
-            0, -0.5, -1.2,
-         0.15,    0,  0.1,
-        -1.75,   -1,    0,
-        -0.75,    0,    0)),
-      n_method, m_p)
+    beta_p <- matrix(
+      jitter(
+        c(1.75, 1.5, 0, 0, -0.5, -1.2, 0.15, 0, 0.1, -1.75, -1, 0, -0.75, 0, 0)
+      ),
+      n_method,
+      m_p
+    )
     p_mu <- jitter(c(-4, -3))
     log_gamma <- jitter(c(-3, -2.1))
     log_rho <- jitter(c(0.8, 2.25, 2.15, -1.35, -0.55))
@@ -426,17 +499,17 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 1000){
     zeta <- mean_lpy / 365 * pp_len * mean_ls
     N <- phi <- lambda <- rep(NA, max(nH, na.rm = TRUE))
     n_init <- rep(NA, n_property)
-    for(i in 1:n_property){
+    for (i in 1:n_property) {
       n_init[i] <- round(exp(unique_log_areas[i])) + sum(rem[i, ], na.rm = TRUE)
       # if(n_init[i] > 5000) n_init[i] <- rpois(1, 500)
       N[nH[i, 1]] <- n_init[i]
-      for(j in 2:n_time_prop[i]){
-        phi[nH[i, j-1]] <- max(0.05, min(rbeta(1, a, b), 0.95))
-        z <- N[nH[i, j-1]] - rem[i, j-1]
+      for (j in 2:n_time_prop[i]) {
+        phi[nH[i, j - 1]] <- max(0.05, min(rbeta(1, a, b), 0.95))
+        z <- N[nH[i, j - 1]] - rem[i, j - 1]
         z <- max(1, z)
-        lambda[nH[i, j-1]] <- z * zeta / 2 + z * phi[nH[i, j-1]]
+        lambda[nH[i, j - 1]] <- z * zeta / 2 + z * phi[nH[i, j - 1]]
 
-        N[nH[i, j]] <- rpois(1, lambda[nH[i, j-1]])
+        N[nH[i, j]] <- rpois(1, lambda[nH[i, j - 1]])
       }
     }
 
@@ -460,17 +533,20 @@ nimble_inits <- function(constants_nimble, data_nimble, buffer = 1000){
       zeta = zeta,
       log_zeta = log(zeta)
     )
-
   })
 }
 
-nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, buffer = 1000){
-
+nimble_inits_sample <- function(
+  posterior_file,
+  constants_nimble,
+  data_nimble,
+  buffer = 1000
+) {
   params <- read_rds(posterior_file)
   draw <- sample.int(nrow(params), 1)
   init <- params |> slice(draw)
 
-  get_vec <- function(df, node){
+  get_vec <- function(df, node) {
     df |>
       select(contains(node)) |>
       pivot_longer(cols = everything()) |>
@@ -502,20 +578,19 @@ nimble_inits_sample <- function(posterior_file, constants_nimble, data_nimble, b
   zeta <- mean_lpy / 365 * pp_len * mean_ls
   N <- phi <- lambda <- rep(NA, max(nH, na.rm = TRUE))
   n_init <- rep(NA, n_property)
-  for(i in 1:n_property){
+  for (i in 1:n_property) {
     n_init[i] <- round(exp(unique_log_areas[i])) + sum(rem[i, ], na.rm = TRUE)
     # if(n_init[i] > 5000) n_init[i] <- rpois(1, 500)
     N[nH[i, 1]] <- n_init[i]
-    for(j in 2:n_time_prop[i]){
-      phi[nH[i, j-1]] <- max(0.05, min(rbeta(1, a, b), 0.95))
-      z <- N[nH[i, j-1]] - rem[i, j-1]
+    for (j in 2:n_time_prop[i]) {
+      phi[nH[i, j - 1]] <- max(0.05, min(rbeta(1, a, b), 0.95))
+      z <- N[nH[i, j - 1]] - rem[i, j - 1]
       z <- max(1, z)
-      lambda[nH[i, j-1]] <- z * zeta / 2 + z * phi[nH[i, j-1]]
+      lambda[nH[i, j - 1]] <- z * zeta / 2 + z * phi[nH[i, j - 1]]
 
-      N[nH[i, j]] <- rpois(1, lambda[nH[i, j-1]])
+      N[nH[i, j]] <- rpois(1, lambda[nH[i, j - 1]])
     }
   }
-
 
   list(
     log_lambda_1 = log(n_init + buffer),
