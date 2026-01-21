@@ -26,8 +26,8 @@ fname <- "stateSamples.rds"
 posterior_states <- read_rds(file.path(read_dir, fname))
 
 posterior_samples <- bind_cols(
-	posterior_parameter_samples,
-	posterior_state_samples
+	posterior_parameter,
+	posterior_state
 )
 
 constants <- nimble_constants(
