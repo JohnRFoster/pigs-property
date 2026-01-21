@@ -31,12 +31,15 @@ posterior_samples <- bind_cols(
 )
 
 constants <- nimble_constants(
-	df = model_data,
-	interval = config$interval
+	model_data,
+	config$interval,
+	config$data_repo,
+	FALSE,
+	NULL
 )
 
 data <- nimble_data(model_data)
-inits <- nimble_inits(constants = constants, data = data)
+inits <- nimble_inits(constants, data)
 
 Rmodel <- nimbleModel(
 	code = modelCode,
@@ -86,7 +89,8 @@ samples <- runMCMC(Cmcmc, niter = 50000, nburnin = 5000)
 
 nodes <- colnames(posterior_samples)
 
-pp_samples <- matrix(NA, n_samp, nrow(data_for_nimble))
+n_samp <- nrow(posterior_samples)
+pp_samples <- matrix(NA, n_samp, nrow(model_data))
 
 pb <- txtProgressBar(max = n_samp, style = 1)
 for (i in 1:n_samp) {
