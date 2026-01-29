@@ -31,6 +31,16 @@ dest_posterior <- file.path(out_dir, paste0(last_fit, "_posterior"))
 mcmc_list <- collate_mcmc_chunks(dest_mcmc, start = 1)
 params_mcmc_list <- mcmc_list$params
 
+# calculate psrf (convergence stat) and effective sample size
+message("==== Pre-burnin diagnostics ====")
+diagnostic <- continue_mcmc(
+  params_mcmc_list,
+  effective_size = 1000,
+  max_psrf = 15,
+  verbose = TRUE
+)
+
+
 total_iter <- nrow(params_mcmc_list[[1]])
 n_chains <- length(params_mcmc_list)
 GBR <- gelman.plot(params_mcmc_list)
@@ -44,6 +54,7 @@ if (is.na(burnin)) {
 params_burnin <- window(params_mcmc_list, start = burnin)
 
 # calculate psrf (convergence stat) and effective sample size
+message("==== Post-burnin diagnostics ====")
 diagnostic <- continue_mcmc(
   params_burnin,
   effective_size = 1000,
