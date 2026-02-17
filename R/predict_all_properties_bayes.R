@@ -99,33 +99,30 @@ parentNodes <- Rmodel$getParents(dataNodes, stochOnly = TRUE)
 simNodes <- Rmodel$getDependencies(parentNodes, self = FALSE)
 
 # default MCMC configuration
-mcmcConf <- configureMCMC(Rmodel, useConjugacy = TRUE)
+# mcmcConf <- configureMCMC(Rmodel, useConjugacy = TRUE)
 
-control_rw <- list(
-	adaptInterval = 100,
-	adaptFactorExponent = 0.6
-)
+# control_rw <- list(
+# 	adaptInterval = 100,
+# 	adaptFactorExponent = 0.6
+# )
 
-mcmcConf$removeSamplers("beta1")
-mcmcConf$addSampler(
-	target = "beta1",
-	type = "RW_block",
-	control = control_rw
-)
+# mcmcConf$removeSamplers("beta1")
+# mcmcConf$addSampler(
+# 	target = "beta1",
+# 	type = "RW_block",
+# 	control = control_rw
+# )
 
-mcmcConf$removeSamplers("log_nu")
-mcmcConf$addSampler(
-	target = "log_nu",
-	type = "slice"
-)
+# mcmcConf$removeSamplers("log_nu")
+# mcmcConf$addSampler(
+# 	target = "log_nu",
+# 	type = "slice"
+# )
 
-mcmcConf$addMonitors("N")
+# mcmcConf$addMonitors("N")
 
-Rmcmc <- buildMCMC(mcmcConf)
-Cmcmc <- compileNimble(Rmcmc)
-
-# don't need these samples but run to get chains moving
-samples <- runMCMC(Cmcmc, niter = 50, nburnin = 0)
+# Rmcmc <- buildMCMC(mcmcConf)
+# Cmcmc <- compileNimble(Rmcmc)
 
 nodes <- colnames(posterior_samples)
 
