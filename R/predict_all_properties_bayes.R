@@ -88,6 +88,20 @@ Rmodel <- nimbleModel(
 	calculate = TRUE
 )
 
+N <- Rmodel$N
+nH_p <- constants$nH_p
+n_survey <- constants$n_survey
+y_sum <- data$y_sum
+
+for (i in 1:n_survey) {
+	N_model <- N[nH_p[i]]
+	n <- round(N_model - y_sum[i])
+	if (n <= 0) {
+		print(i)
+		Rmodel$N[nH_p[i]] <- N_model + (abs(n) + 200)
+	}
+}
+
 Cmodel <- compileNimble(Rmodel)
 
 ## Ensure we have the nodes needed to simulate new datasets
