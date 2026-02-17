@@ -31,12 +31,11 @@ fname <- "posteriorSamples.rds"
 posterior_samples <- read_rds(file.path(read_dir, fname))
 
 # get data for all properties
-data_store <- "C:/Users/John.Foster/OneDrive - USDA/Desktop/fosteR/data-store/"
 file <- "insitu/2025-10-01/MIS.Effort.Take.All.Methods.Daily.Events.csv"
 interval <- config$interval
 dev <- config$dev
 data_repo <- config$data_repo
-data_mis <- get_data(file.path(data_store, file), interval, data_repo)
+data_mis <- get_data(file.path(data_repo, file), interval, data_repo)
 
 ## observation covariates ----
 file <- file.path(data_repo, config$file_land)
