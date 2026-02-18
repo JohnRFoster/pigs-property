@@ -18,6 +18,13 @@ read_dir <- file.path(out_dir, post_dir)
 
 fname <- file.path(read_dir, "allAundanceSamples_2025-10-01.rds")
 
-samples <- read_rds(fname)
+message("Reading posterior predictive samples from: ", fname)
+pp_samples <- read_rds(fname)
 
-print(glimpse(samples))
+message("Collating posterior predictive samples")
+abundance_sample <- pp_samples |>
+	as_tibble() |>
+	pivot_longer(cols = everything(), names_to = "node", values_to = "value") |>
+	mutate(n_id = as.numeric(stringr::str_extract(node, "(?<=\\[)\\d*(?=\\])")))
+
+head(abundance_sample)
