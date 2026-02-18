@@ -16,8 +16,9 @@ out_dir <- config$out_dir
 post_dir <- "1_posterior"
 read_dir <- file.path(out_dir, post_dir)
 
-message("Reading posterior predictive samples from: ", fname)
 fname <- "allAundanceSamples_2025-10-01.rds"
+message("Reading posterior predictive samples from: ", fname)
+
 rds_name <- file.path(read_dir, fname)
 pp_samples <- read_rds(rds_name)
 
