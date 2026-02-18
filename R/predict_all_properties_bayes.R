@@ -150,7 +150,7 @@ for (i in 1:n_samp) {
 	for (j in seq_along(nodes)) {
 		Cmodel[[nodes[j]]] <- posterior_samples[i, nodes[j]]
 	}
-	Cmodel$simulate(simNodes, includeData = TRUE)
+	Cmodel$simulate(simNodes)
 	pp_samples[i, ] <- Cmodel[["N"]]
 	setTxtProgressBar(pb, i)
 }
